@@ -1,11 +1,5 @@
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![allow(non_upper_case_globals)]
+#![allow(non_snake_case)]
 
 mod coord {
     pub struct CoordCube {
@@ -67,11 +61,13 @@ mod defs {
     use enums::Facelet as Fc;
     use enums::Color as Cl;
 
+    // Map the corner positions to facelet positions.
     static cornerFacelet: [[Fc;3];8] = [
     [Fc::U4, Fc::R1, Fc::F2], [Fc::U3, Fc::F1, Fc::L2], [Fc::U1, Fc::L1, Fc::B2], [Fc::U2, Fc::B1, Fc::R2],
                      [Fc::D4, Fc::R4, Fc::B3], [Fc::D2, Fc::F4, Fc::R3], [Fc::D1, Fc::L4, Fc::F3], [Fc::D3, Fc::B4, Fc::L3],
                      ];
 
+    // Map the corner positions to facelet colors.
     static cornerColor: [[Cl;3];8]=[[Cl::U, Cl::R, Cl::F], [Cl::U, Cl::F, Cl::L], [Cl::U, Cl::L, Cl::B], [Cl::U, Cl::B, Cl::R],
                    [Cl::D, Cl::R, Cl::B], [Cl::D, Cl::F, Cl::R], [Cl::D, Cl::L, Cl::F], [Cl::D, Cl::B, Cl::L]
                    ];
