@@ -100,25 +100,23 @@ fn randrange(a: u32, b: u32) -> u32 {
     return num;
 }
 
+// the basic six cube moves described by permutations and changes in orientation
+
+// Up-move
+static cpU: [Co;8] = [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL];
+static coU: [u32;8] = [0, 0, 0, 0, 0, 0, 0, 0];
+
+// Right-move
+static cpR: [Co;8] = [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL];  // permutation of the corners
+static coR: [u32;8] = [2, 0, 0, 1, 2, 1, 0, 0];  // changes of the orientations of the corners
+
+// Front-move
+static cpF: [Co;8] = [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL];
+static coF: [u32;8] = [1, 2, 0, 0, 0, 2, 1, 0];
+
+const CUBE_OK: bool = true;
+
 /*
-# ################## the basic six cube moves described by permutations and changes in orientation #####################
-
-# Up-move
-cpU = [Co.UBR, Co.URF, Co.UFL, Co.ULB,  Co.DRB, Co.DFR, Co.DLF, Co.DBL]
-coU = [0, 0, 0, 0, 0, 0, 0, 0]
-
-# Right-move
-cpR = [Co.DFR, Co.UFL, Co.ULB, Co.URF, Co.UBR, Co.DRB, Co.DLF, Co.DBL]  # permutation of the corners
-coR = [2, 0, 0, 1, 2, 1, 0, 0]  # changes of the orientations of the corners
-
-# Front-move
-cpF = [Co.UFL, Co.DLF, Co.ULB, Co.UBR, Co.DRB, Co.URF, Co.DFR, Co.DBL]
-coF = [1, 2, 0, 0, 0, 2, 1, 0]
-
-########################################################################################################################
-
-CUBE_OK = True
-
 
 class CubieCube:
     """Represents a 2x2x2 cube on the cubie level with 8 corner cubies and the corner orientations.
