@@ -136,7 +136,7 @@ mod cubie {
     ///
     /// Is also used to represent the 18 cube moves.
     #[derive(Eq,PartialEq,Debug,Clone)]
-    struct CubieCube {
+    pub struct CubieCube {
         cp: [Co;8], // corner permutation
         co: [i32;8], // corner orientation
     }
@@ -185,7 +185,7 @@ mod cubie {
         */
 
         /// Multiplies this cubie cube with another cubie cube b. Does not change b.
-        pub fn multiply(&self, b: Self) -> Self {
+        pub fn multiply(&self, b: &Self) -> Self {
             let mut c_perm = [Co::URF; 8];
             let mut c_ori = [0; 8];
             let mut ori: i32 = 0;
@@ -289,7 +289,7 @@ mod cubie {
             return b;
         }
 
-        fn set_corners(&mut self, mut idx: u32) {
+        pub fn set_corners(&mut self, mut idx: u32) {
             for j in Co::iter() {
                 self.cp[*j as usize] = *j;
             }
@@ -345,19 +345,27 @@ mod cubie {
 
 
 
+    //
+    // these cubes represent the basic cube moves
+    //
+
+    pub static basicMoveCube: [&CubieCube; 3] = [
+        //&CubieCube{ cp: cpU, co: coU },
+        //&CubieCube{ cp: cpR, co: coR },
+        //&CubieCube{ cp: cpF, co: coF },
+
+        &CubieCube{ cp: [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL], co:  [0, 0, 0, 0, 0, 0, 0, 0]},
+        &CubieCube{ cp: [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL], co: [2, 0, 0, 1, 2, 1, 0, 0]},
+        &CubieCube{ cp: [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL], co: [1, 2, 0, 0, 0, 2, 1, 0] },
+    ];
 
 
 /*
-########################################################################################################################
+    // these cubes represent the all 9 cube moves
+    fn moveCube() -> [CubieCube; 9] {
 
-# ################################## these cubes represent the basic cube moves ########################################
-basicMoveCube = [0] * 6
-basicMoveCube[Color.U] = CubieCube(cpU, coU)
-basicMoveCube[Color.R] = CubieCube(cpR, coR)
-basicMoveCube[Color.F] = CubieCube(cpF, coF)
-########################################################################################################################
+    }
 
-# ################################# these cubes represent the all 9 cube moves ########################################
 moveCube = [0] * 9
 for c1 in [Color.U, Color.R, Color.F]:
     cc = CubieCube()
@@ -372,4 +380,44 @@ for c1 in [Color.U, Color.R, Color.F]:
 mod misc {
     pub fn rotate_left<T>(_arr: &mut[T], _l: usize, _r: usize) {}
     pub fn rotate_right<T>(_arr: &mut [T], _l: usize, _r: usize) {}
+}
+
+mod moves {
+    use cubie as cb;
+    use enums;
+    use defs::{N_TWIST, N_CORNERS, N_MOVE};
+
+    pub fn init() {
+        let mut a = cb::CubieCube::new(None, None);
+
+        let mut corntwist_move = [0 as u32; (N_TWIST * N_MOVE) as usize];
+        for i in 0..N_TWIST {
+            a.set_cornertwist(i);
+            for jref in [enums::Color::U, enums::Color::R, enums::Color::F].iter() {
+                let j = *jref;
+                for k in 0..3 {
+                    a = a.multiply(cb::basicMoveCube[j as usize]);
+                    corntwist_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_corntwist();
+                }
+                a = a.multiply(cb::basicMoveCube[j as usize]);
+            }
+        }
+
+        // TODO: cache as file
+        let mut cornperm_move = [0 as u32; (N_CORNERS * N_MOVE) as usize];
+        for i in 0..N_CORNERS {
+            if (i+1)%200 == 0 {
+                print!(".")
+            }
+            a.set_corners(i);
+            for jref in [enums::Color::U, enums::Color::R, enums::Color::F].iter() {
+                let j = *jref;
+                for k in 0..3 {
+                    a = a.multiply(cb::basicMoveCube[j as usize]);
+                    cornperm_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_cornperm();
+                }
+                a = a.multiply(cb::basicMoveCube[j as usize]);
+            }
+        }
+    }
 }
