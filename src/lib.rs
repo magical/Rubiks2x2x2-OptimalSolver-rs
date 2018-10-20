@@ -387,9 +387,10 @@ mod moves {
     use enums;
     use defs::{N_TWIST, N_CORNERS, N_MOVE};
 
-    pub fn init() {
-        let mut a = cb::CubieCube::new(None, None);
+    pub fn init() {}
 
+    pub fn get_corntwist() -> [u32; (N_TWIST*N_MOVE)as usize] {
+        let mut a = cb::CubieCube::new(None, None);
         let mut corntwist_move = [0 as u32; (N_TWIST * N_MOVE) as usize];
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
@@ -402,7 +403,10 @@ mod moves {
                 a = a.multiply(cb::basicMoveCube[j as usize]);
             }
         }
-
+        return corntwist_move
+    }
+    pub fn get_cornperm() -> [u32; (N_CORNERS*N_MOVE) as usize] {
+        let mut a = cb::CubieCube::new(None, None);
         // TODO: cache as file
         let mut cornperm_move = [0 as u32; (N_CORNERS * N_MOVE) as usize];
         for i in 0..N_CORNERS {
@@ -419,5 +423,50 @@ mod moves {
                 a = a.multiply(cb::basicMoveCube[j as usize]);
             }
         }
+        return cornperm_move
+    }
+}
+
+mod pruning {
+    //! The pruning table cuts the search tree during the search.
+    //! In this case it it gives the exact distance to the solved state.
+
+    use defs;
+    use enums;
+    use moves as mv;
+
+    /// creates/loads the corner prunig twable
+    fn create_cornerprun_table() -> [i32; (defs::N_CORNERS * defs::N_TWIST) as usize] {
+
+        let mut corner_depth = [-1; (defs::N_CORNERS * defs::N_TWIST) as usize];
+
+        let cornperm_move = mv::get_cornperm();
+        let corntwist_move = mv::get_corntwist();
+
+        let mut done = 1;
+        let mut depth = 0;
+        while done != defs::N_CORNERS * defs::N_TWIST {
+            for corners in 0..defs::N_CORNERS {
+                for twist in 0..defs::N_TWIST {
+                    if corner_depth[(defs::N_TWIST * corners + twist) as usize] == depth {
+                        for m in 0..9 { // enums::Move
+                            let corners1 = cornperm_move[(9*corners + m) as usize];
+                            let twist1 = corntwist_move[(9*twist + m) as usize];
+                            let idx1 = (defs::N_TWIST * corners1 + twist1) as usize;
+                            if corner_depth[idx1] == -1 { // entry not yet filled
+                                corner_depth[idx1] = depth+1;
+                                done += 1;
+                                if done % 50000 == 0 {
+                                    print!(".");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            depth += 1
+        }
+
+        return corner_depth
     }
 }
