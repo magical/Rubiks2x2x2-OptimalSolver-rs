@@ -436,7 +436,7 @@ mod pruning {
     use moves as mv;
 
     /// creates/loads the corner prunig twable
-    fn create_cornerprun_table() -> [i32; (defs::N_CORNERS * defs::N_TWIST) as usize] {
+    pub fn create_cornerprun_table() -> [i32; (defs::N_CORNERS * defs::N_TWIST) as usize] {
 
         let mut corner_depth = [-1; (defs::N_CORNERS * defs::N_TWIST) as usize];
 
@@ -469,4 +469,83 @@ mod pruning {
 
         return corner_depth
     }
+}
+
+mod solver {
+    //! The solve function computes all optimal solving maneuvers
+
+    //use face;
+    use cubie;
+    use coord;
+    use enums as en;
+    use moves as mv;
+    use pruning as pr;
+    use defs::{N_TWIST};
+
+    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<u32>, togo: u32, solutions: &mut Vec<Vec<u32>>) {
+        if togo == 0 {
+            /*
+            if solutions.len() == 0 or solutions[-1].len() == sofar.len() {
+                solutions.append(sofar[..])
+            }
+            */
+        } else {
+            // XXX
+            let cornperm_move = mv::get_cornperm();
+            let corntwist_move = mv::get_corntwist();
+            let corner_depth = pr::create_cornerprun_table();
+
+            for m in 0..8 { // en.Move
+                if sofar.len() > 0 {
+                    if sofar[sofar.len()-1] / 3 == m / 3 { // successive moves on same face
+                        continue
+                    }
+                }
+
+                let cornperm_new = cornperm_move[(9*cornperm + m) as usize];
+                let corntwist_new = corntwist_move[(9*corntwist + m) as usize];
+
+                if corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] as u32 >= togo {
+                    continue // impossible to reach solved cube in togo - 1 moves
+                }
+
+                sofar.push(m);
+                search(cornperm_new, corntwist_new, sofar, togo - 1, solutions);
+                sofar.pop();
+            }
+        }
+    }
+
+    /*
+    /// Solves a 2x2x2 cube defined by its cube definition string.
+    ///
+    /// :param cubestring: The format of the string is given in the Facelet class defined in the file enums.py
+    /// :return A list of all optimal solving maneuvers
+    pub fn solve(cubestring: &str) -> Result<String,&'static str> {
+        let fc = face::FaceCube::new();
+        let s = try!(fc.from_string(cubestr))
+        let cc = fc.to_cubie_cube();
+        let _ = try!(cc.verify());
+
+        let mut solutions = Vec<Vec<u32>>::new();
+        let co_cube = coord::CoordCube::new(cc);
+        let corner_depth = pr::create_cornerprun_table(); // XXX
+        let togo = pr::corner_depth[N_TWIST, co_cube.cornperm + co_cube.corntwist];
+        let mut sofar = Vec<u32>::new();
+        search(co_cube.cornperm, co_cube.corntwist, sofar, togo, solutions);
+
+        let s = String::new();
+        for sol in solutions.iter() {
+            let ps = String::new();
+            for m in sol {
+                ps += format!("{:?} ", m.name);
+            }
+            ps += format!("({}f)\n", ps::len()/3);
+            s += ps
+        }
+        return &s;
+    }
+    */
+
+
 }
