@@ -1,0 +1,9 @@
+[package]
+name = "Rubiks2x2x2-OptimalSolver"
+version = "0.1.0"
+authors = [
+    "Herbert Kociemba <kociemba@t-online.de>",
+    "Andrew Ekstedt <andrew.ekstedt@gmail.com>",
+]
+
+[dependencies]
