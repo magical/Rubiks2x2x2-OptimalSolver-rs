@@ -63,6 +63,15 @@ mod enums {
         URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL,
     }
 
+    use std::slice::Iter;
+    impl Corner {
+        pub fn iter() -> Iter<'static, Corner> {
+            use self::Corner::*;
+            static CORNERS: [Corner;8] = [URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL];
+            return CORNERS.into_iter()
+        }
+    }
+
     /** The moves in the faceturn metric. Not to be confused with the names of the facelet positions in class Facelet. */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Move {
@@ -136,7 +145,7 @@ mod cubie {
         /// Initializes corners and edges.
         /// :param cp: corner permutation
         /// :param co: corner orientation
-        fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
+        pub fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
             CubieCube{
                 cp: if cp.is_none() {
                     [Co::URF, Co::UFL, Co::ULB, Co::UBR, Co::DRB, Co::DFR, Co::DLF, Co::DBL]
@@ -144,7 +153,7 @@ mod cubie {
                     cp.unwrap()
                 },
                 co: if co.is_none() {
-                    [0, 0, 0, 0, 0, 0, 0, 0]
+                    [0; 8]
                 } else {
                     co.unwrap()
                 },
@@ -152,7 +161,7 @@ mod cubie {
         }
 
         /// Prints string for a cubie cube.
-        fn to_str(&self) -> String {
+        pub fn to_str(&self) -> String {
             let mut s = String::new();
             for i in 0..self.cp.len() {
                 s += &format!("({:?}, {})", self.cp[i], self.co[i]);
@@ -162,7 +171,7 @@ mod cubie {
 
         /*
         /// Returns a facelet representation of the cube.
-        fn to_facelet_cube(&self) -> FaceCube {
+        pub fn to_facelet_cube(&self) -> FaceCube {
             let fc = face::FaceCube()
             for i in 0..8 {
                 let j = self.cp[i]  # corner j is at corner position i
@@ -176,10 +185,9 @@ mod cubie {
         */
 
         /// Multiplies this cubie cube with another cubie cube b. Does not change b.
-        fn multiply(&self, b: Self) -> Self {
-            let z = Co::URF;
-            let mut c_perm = [z,z,z,z,z,z,z,z];
-            let mut c_ori = [0,0,0,0,0,0,0,0];
+        pub fn multiply(&self, b: Self) -> Self {
+            let mut c_perm = [Co::URF; 8];
+            let mut c_ori = [0; 8];
             let mut ori: i32 = 0;
             for c in 0..8 {
                 c_perm[c] = self.cp[b.cp[c] as usize];
@@ -217,42 +225,53 @@ mod cubie {
                 co: c_ori,
             }
         }
-    }
 
-/*
+        /// Stores the inverse of this cubie cube in d.
+        pub fn inv_cubie_cube(&self, d: &mut Self) {
+            for cref in Co::iter() {
+                let c: Co = *cref;
+                d.cp[self.cp[c as usize] as usize] = c;
+            }
+            for c in 0..8 {
+                let ori = self.co[d.cp[c] as usize];
+                if ori >= 3 {
+                    d.co[c] = ori;
+                }
+                else {
+                    d.co[c] = -ori;
+                    if d.co[c] < 0 {
+                        d.co[c] += 3;
+                    }
+                }
+            }
+        }
 
 
+        //
+        // coordinates for 2x2x2 cube
+        //
 
-    def inv_cubie_cube(self, d):
-        """Stores the inverse of this cubie cube in d."""
+        /// The twist of the 8 corners. 0 <= twist < 729. The DBL-corner is fixed.
+        pub fn get_corntwist(&self) -> u32 {
+            let mut ret = 0;
+            for i in 0..8 {
+                ret = 3 * ret + (self.co[i] as u32);
+            }
+            return ret;
+        }
 
-        for c in Co:
-            d.cp[self.cp[c]] = c
-        for c in Co:
-            ori = self.co[d.cp[c]]
-            if ori >= 3:
-                d.co[c] = ori
-            else:
-                d.co[c] = -ori
-                if d.co[c] < 0:
-                    d.co[c] += 3
+        pub fn set_cornertwist(&mut self, mut twist: u32) {
+            let mut twistparity = 0;
+            for i in (0..8).rev() {
+                self.co[i] = (twist % 3) as i32;
+                twistparity += self.co[i];
+                twist /= 3;
+            }
+            self.co[Co::DLF as usize] = (3 - twistparity % 3) % 3;
+            // XXX need mathematical mod?
+        }
 
-
-    # ###################################### coordinates for 2x2x2 cube #################################################
-    def get_corntwist(self):
-        """The twist of the 8 corners. 0 <= twist < 729. The DBL-corner is fixed."""
-        ret = 0
-        for i in range(Co.URF, Co.DLF):
-            ret = 3 * ret + self.co[i]
-        return ret
-
-    def set_cornertwist(self, twist):
-        twistparity = 0
-        for i in range(Co.DLF - 1, Co.URF - 1, -1):
-            self.co[i] = twist % 3
-            twistparity += self.co[i]
-            twist //= 3
-        self.co[Co.DLF] = ((3 - twistparity % 3) % 3)
+        /*
 
 
     def get_cornperm(self):
@@ -285,25 +304,38 @@ mod cubie {
         self.set_corners(randrange(N_CORNERS))
         self.set_cornertwist(randrange(N_TWIST))
 
-    def verify(self):
-        """Checks if cubiecube is valid"""
+    */
 
-        corner_count = [0] * 8
-        for i in Co:
-            corner_count[self.cp[i]] += 1
-        for i in Co:
-            if corner_count[i] != 1:
-                return 'Error: Some corners are undefined.'
+        /// Checks if cubiecube is valid
+        pub fn verify(&self) -> Result<(), &'static str> {
+            let mut corner_count = [0; 8];
+            for c in self.cp.iter() {
+                corner_count[*c as usize] += 1;
+            }
+            for count in corner_count.iter() {
+                if *count != 1 {
+                    return Err("Error: Some corners are undefined.");
+                }
+            }
 
-        s = 0
-        for i in Co:
-            s += self.co[i]
-        if s % 3 != 0:
-            return 'Error: Total corner twist is wrong.'
+            let mut s = 0;
+            for i in self.co.iter() {
+                s += *i;
+            }
+            if s % 3 != 0 {
+                return Err("Error: Total corner twist is wrong.");
+            }
 
-        return CUBE_OK
+            return Ok(());
+        }
+
+    }
 
 
+
+
+
+/*
 ########################################################################################################################
 
 # ################################## these cubes represent the basic cube moves ########################################
