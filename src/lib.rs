@@ -40,6 +40,7 @@ mod enums {
         B-color, in position U3 we have the L color etc. according to the order U1, U2, U3, U4, R1, R2, R3, R4, F1, F2, F3,
         F4, D1, D2, D3, D4, L1, L2, L3, L4, B1, B2, B3, B4 of the enum constants.
     */
+    #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Facelet {
         U1, U2, U3, U4,
         R1, R2,R3, R4,
@@ -51,17 +52,22 @@ mod enums {
 
     /** The possible colors of the cube facelets. Color U refers to the color of the U(p)-face etc.
         Also used to name the faces itself. **/
+    #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Color {
         U, R, F, D, L, B,
     }
 
     /** The names of the corner positions of the cube. Corner URF e.g. has an U(p), a R(ight) and a F(ront) facelet. */
+    #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Corner {
         URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL,
     }
 
     /** The moves in the faceturn metric. Not to be confused with the names of the facelet positions in class Facelet. */
-    pub enum Move {}
+    #[derive(Eq,PartialEq,Debug,Copy,Clone)]
+    pub enum Move {
+        U1, U2, U3, R1, R2, R3, F1, F2, F3
+    }
 
 }
 
@@ -87,111 +93,135 @@ mod defs {
 }
 
 mod cubie {
-// The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
+    //! The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
 
-use defs::{cornerFacelet, cornerColor, N_CORNERS, N_TWIST};
-use enums::{Color,Corner as Co};
-//use misc::{rotate_left,rotate_right};
-extern crate rand;
+    use defs::{cornerFacelet, cornerColor, N_CORNERS, N_TWIST};
+    use enums::{Color,Corner as Co};
+    //use misc::{rotate_left,rotate_right};
+    extern crate rand;
 
-fn randrange(a: u32, b: u32) -> u32 {
-    use cubie::rand::Rng;
-    let num = rand::thread_rng().gen_range(a, b);
-    return num;
-}
+    fn randrange(a: u32, b: u32) -> u32 {
+        use cubie::rand::Rng;
+        let num = rand::thread_rng().gen_range(a, b);
+        return num;
+    }
 
-// the basic six cube moves described by permutations and changes in orientation
+    // the basic six cube moves described by permutations and changes in orientation
 
-// Up-move
-static cpU: [Co;8] = [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL];
-static coU: [u32;8] = [0, 0, 0, 0, 0, 0, 0, 0];
+    // Up-move
+    static cpU: [Co;8] = [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL];
+    static coU: [i32;8] = [0, 0, 0, 0, 0, 0, 0, 0];
 
-// Right-move
-static cpR: [Co;8] = [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL];  // permutation of the corners
-static coR: [u32;8] = [2, 0, 0, 1, 2, 1, 0, 0];  // changes of the orientations of the corners
+    // Right-move
+    static cpR: [Co;8] = [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL];  // permutation of the corners
+    static coR: [i32;8] = [2, 0, 0, 1, 2, 1, 0, 0];  // changes of the orientations of the corners
 
-// Front-move
-static cpF: [Co;8] = [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL];
-static coF: [u32;8] = [1, 2, 0, 0, 0, 2, 1, 0];
+    // Front-move
+    static cpF: [Co;8] = [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL];
+    static coF: [i32;8] = [1, 2, 0, 0, 0, 2, 1, 0];
 
-const CUBE_OK: bool = true;
+    const CUBE_OK: bool = true;
+
+
+    /// Represents a 2x2x2 cube on the cubie level with 8 corner cubies and the corner orientations.
+    ///
+    /// Is also used to represent the 18 cube moves.
+    #[derive(Eq,PartialEq,Debug,Clone)]
+    struct CubieCube {
+        cp: [Co;8], // corner permutation
+        co: [i32;8], // corner orientation
+    }
+
+    impl CubieCube {
+        /// Initializes corners and edges.
+        /// :param cp: corner permutation
+        /// :param co: corner orientation
+        fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
+            CubieCube{
+                cp: if cp.is_none() {
+                    [Co::URF, Co::UFL, Co::ULB, Co::UBR, Co::DRB, Co::DFR, Co::DLF, Co::DBL]
+                } else {
+                    cp.unwrap()
+                },
+                co: if co.is_none() {
+                    [0, 0, 0, 0, 0, 0, 0, 0]
+                } else {
+                    co.unwrap()
+                },
+            }
+        }
+
+        /// Prints string for a cubie cube.
+        fn to_str(&self) -> String {
+            let mut s = String::new();
+            for i in 0..self.cp.len() {
+                s += &format!("({:?}, {})", self.cp[i], self.co[i]);
+            }
+            return s;
+        }
+
+        /*
+        /// Returns a facelet representation of the cube.
+        fn to_facelet_cube(&self) -> FaceCube {
+            let fc = face::FaceCube()
+            for i in 0..8 {
+                let j = self.cp[i]  # corner j is at corner position i
+                let ori = self.co[i]  # orientation of C j at position i
+                for k in 0..3 {
+                    fc.f[cornerFacelet[i][(k + ori) % 3]] = cornerColor[j][k]
+                }
+            }
+            return fc
+        }
+        */
+
+        /// Multiplies this cubie cube with another cubie cube b. Does not change b.
+        fn multiply(&self, b: Self) -> Self {
+            let z = Co::URF;
+            let mut c_perm = [z,z,z,z,z,z,z,z];
+            let mut c_ori = [0,0,0,0,0,0,0,0];
+            let mut ori: i32 = 0;
+            for c in 0..8 {
+                c_perm[c] = self.cp[b.cp[c] as usize];
+                let ori_a = self.co[b.cp[c] as usize];
+                let ori_b = b.co[c];
+                if ori_a < 3 && ori_b < 3 {  // two regular cubes
+                    ori = ori_a + ori_b;
+                    if ori >= 3 {
+                        ori -= 3;
+                    }
+                }
+                else if ori_a < 3 && 3 <= ori_b {  // cube b is in a mirrored state
+                    ori = ori_a + ori_b;
+                    if ori >= 6 {
+                        ori -= 3;  // the composition also is in a mirrored state
+                    }
+                }
+                else if ori_a >= 3 && 3 > ori_b {  // cube a is in a mirrored state
+                    ori = ori_a - ori_b;
+                    if ori < 3 {
+                        ori += 3;  // the composition is a mirrored cube
+                    }
+                }
+                else if ori_a >= 3 && ori_b >= 3 {  // if both cubes are in mirrored states
+                    ori = ori_a - ori_b;
+                    if ori < 0 {
+                        ori += 3; // the composition is a regular cube
+                    }
+                }
+                c_ori[c] = ori;
+            }
+
+            return Self{
+                cp: c_perm,
+                co: c_ori,
+            }
+        }
+    }
 
 /*
 
-class CubieCube:
-    """Represents a 2x2x2 cube on the cubie level with 8 corner cubies and the corner orientations.
 
-    Is also used to represent the 18 cube moves.
-    """
-
-    def __init__(self, cp=None, co=None):
-        """
-        Initializes corners and edges.
-        :param cp: corner permutation
-        :param co: corner orientation
-        """
-        if cp is None:
-            self.cp = [Co(i) for i in range(8)]  # You may not put this as the default two lines above!
-        else:
-            self.cp = cp[:]
-        if co is None:
-            self.co = [0] * 8
-        else:
-            self.co = co[:]
-
-    def __str__(self):
-        """Prints string for a cubie cube."""
-        s = ''
-        for i in Co:
-            s = s + '(' + str(self.cp[i]) + ',' + str(self.co[i]) + ')'
-        return s
-
-    def __eq__(self, other):
-        """Defines equality of two cubie cubes."""
-        if self.cp == other.cp and self.co == other.co:
-            return True
-        else:
-            return False
-
-    def to_facelet_cube(self):
-        """Returns a facelet representation of the cube."""
-        fc = face.FaceCube()
-        for i in Co:
-            j = self.cp[i]  # corner j is at corner position i
-            ori = self.co[i]  # orientation of C j at position i
-            for k in range(3):
-                fc.f[cornerFacelet[i][(k + ori) % 3]] = cornerColor[j][k]
-        return fc
-
-    def multiply(self, b):
-        """Multiplies this cubie cube with another cubie cube b. Does not change b."""
-        c_perm = [0] * 8
-        c_ori = [0] * 8
-        ori = 0
-        for c in Co:
-            c_perm[c] = self.cp[b.cp[c]]
-            ori_a = self.co[b.cp[c]]
-            ori_b = b.co[c]
-            if ori_a < 3 and ori_b < 3:  # two regular cubes
-                ori = ori_a + ori_b
-                if ori >= 3:
-                    ori -= 3
-            elif ori_a < 3 <= ori_b:  # cube b is in a mirrored state
-                ori = ori_a + ori_b
-                if ori >= 6:
-                    ori -= 3  # the composition also is in a mirrored state
-            elif ori_a >= 3 > ori_b:  # cube a is in a mirrored state
-                ori = ori_a - ori_b
-                if ori < 3:
-                    ori += 3  # the composition is a mirrored cube
-            elif ori_a >= 3 and ori_b >= 3:  # if both cubes are in mirrored states
-                ori = ori_a - ori_b
-                if ori < 0:
-                    ori += 3  # the composition is a regular cube
-            c_ori[c] = ori
-        for c in Co:
-            self.cp[c] = c_perm[c]
-            self.co[c] = c_ori[c]
 
     def inv_cubie_cube(self, d):
         """Stores the inverse of this cubie cube in d."""
