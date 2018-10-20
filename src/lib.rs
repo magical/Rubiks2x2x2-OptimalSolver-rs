@@ -106,7 +106,7 @@ mod cubie {
 
     use defs::{cornerFacelet, cornerColor, N_CORNERS, N_TWIST};
     use enums::{Color,Corner as Co};
-    //use misc::{rotate_left,rotate_right};
+    use misc::{rotate_left,rotate_right};
     extern crate rand;
 
     fn randrange(a: u32, b: u32) -> u32 {
@@ -271,40 +271,52 @@ mod cubie {
             // XXX need mathematical mod?
         }
 
+
+
+        /// The permutation of the 8 corners. 0 <= corners < 5040. The DLB_corner is fixed.
+        pub fn get_cornperm(&self) -> u32{
+            let mut perm = self.cp;  // duplicate cp
+            let mut b = 0;
+            for jref in Co::iter().rev() {
+                let j = *jref;
+                let mut k = 0;
+                while perm[j as usize] != j {
+                    rotate_left(&mut perm, 0, j as usize);
+                    k += 1;
+                }
+                b = (j as u32 + 1) * b + k;
+            }
+            return b;
+        }
+
+        fn set_corners(&mut self, mut idx: u32) {
+            for j in Co::iter() {
+                self.cp[*j as usize] = *j;
+            }
+            for jref in Co::iter() {
+                let j = *jref as u32;
+                let mut k = idx % (j+ 1);
+                idx /= j;
+                while k > 0 {
+                    rotate_right(&mut self.cp, 0, j as usize);
+                    k -= 1;
+                }
+            }
+        }
+
+        //
+        // end coordinates for 2x2x2 cube
+        //
+
+        // other usefull functions
+
         /*
+        def randomize(self):
+            """Generates a random cube. The probability is the same for all possible states."""
+            self.set_corners(randrange(N_CORNERS))
+            self.set_cornertwist(randrange(N_TWIST))
 
-
-    def get_cornperm(self):
-        """The permutation of the 8 corners. 0 <= corners < 5040. The DLB_corner is fixed."""
-        perm = list(self.cp)  # duplicate cp
-        b = 0
-        for j in range(Co.DBL, Co.URF, -1):
-            k = 0
-            while perm[j] != j:
-                rotate_left(perm, 0, j)
-                k += 1
-            b = (j + 1) * b + k
-        return b
-
-    def set_corners(self, idx):
-
-        self.cp = [i for i in Co]
-        for j in Co:
-            k = idx % (j + 1)
-            idx //= j + 1
-            while k > 0:
-                rotate_right(self.cp, 0, j)
-                k -= 1
-                # ############################## end coordinates for 2x2x2 cube ########################################
-
-                # #################################### other usefull functions #########################################
-
-    def randomize(self):
-        """Generates a random cube. The probability is the same for all possible states."""
-        self.set_corners(randrange(N_CORNERS))
-        self.set_cornertwist(randrange(N_TWIST))
-
-    */
+        */
 
         /// Checks if cubiecube is valid
         pub fn verify(&self) -> Result<(), &'static str> {
@@ -355,4 +367,9 @@ for c1 in [Color.U, Color.R, Color.F]:
 
 */
 
+}
+
+mod misc {
+    pub fn rotate_left<T>(_arr: &mut[T], _l: usize, _r: usize) {}
+    pub fn rotate_right<T>(_arr: &mut [T], _l: usize, _r: usize) {}
 }
