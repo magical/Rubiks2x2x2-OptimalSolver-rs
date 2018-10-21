@@ -22,25 +22,25 @@
     /// Represents a 2x2x2 cube on the coordinate level.
     ///
     /// A state is uniquely determined by the coordinates corntwist and cornperm.
-    pub struct CoordCube {
-        pub corntwist: u32, // twist of corners
-        pub cornperm: u32, // permutations of corners
+    struct CoordCube {
+        corntwist: u32, // twist of corners
+        cornperm: u32, // permutations of corners
     }
 
     impl CoordCube {
-        pub fn new() -> CoordCube {
+        fn new() -> CoordCube {
             return CoordCube { corntwist: SOLVED, cornperm: SOLVED }
         }
 
-        pub fn from_cubie_cube(cc: &CubieCube) -> CoordCube {
+        fn from_cubie_cube(cc: &CubieCube) -> CoordCube {
             return CoordCube { corntwist: cc.get_corntwist(), cornperm: cc.get_cornperm() }
         }
 
-        pub fn to_str(&self) -> String {
+        fn to_str(&self) -> String {
             return format!("(corntwist: {}, cornperm: {})", self.corntwist, self.cornperm)
         }
 
-        pub fn move_(&mut self, m: u32) {
+        fn move_(&mut self, m: u32) {
             // XXX
             //self.corntwist = twist_move[(N_MOVE * self.corntwist + m) as usize];
             //self.cornperm = corners_move[(N_MOVE * self.cornperm + m) as usize];
@@ -81,7 +81,7 @@
       F4, D1, D2, D3, D4, L1, L2, L3, L4, B1, B2, B3, B4 of the enum constants.
     */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
-    pub enum Facelet {
+    enum Facelet {
         U1, U2, U3, U4,
         R1, R2, R3, R4,
         F1, F2, F3, F4,
@@ -93,12 +93,12 @@
     /** The possible colors of the cube facelets. Color U refers to the color of the U(p)-face etc.
         Also used to name the faces itself. **/
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
-    pub enum Color {
+    enum Color {
         U, R, F, D, L, B,
     }
 
     impl Color {
-        pub fn iter() -> Iter<'static, Color> {
+        fn iter() -> Iter<'static, Color> {
             use self::Color::*;
             static COLORS: [Color;6] = [U, R, F, D, L, B];
             return COLORS.into_iter()
@@ -108,12 +108,12 @@
 
     /** The names of the corner positions of the cube. Corner URF e.g. has an U(p), a R(ight) and a F(ront) facelet. */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
-    pub enum Corner {
+    enum Corner {
         URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL,
     }
 
     impl Corner {
-        pub fn iter() -> Iter<'static, Corner> {
+        fn iter() -> Iter<'static, Corner> {
             use self::Corner::*;
             static CORNERS: [Corner;8] = [URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL];
             return CORNERS.into_iter()
@@ -122,12 +122,12 @@
 
     /** The moves in the faceturn metric. Not to be confused with the names of the facelet positions in class Facelet. */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
-    pub enum Move {
+    enum Move {
         U1, U2, U3, R1, R2, R3, F1, F2, F3
     }
 
     impl Move {
-        pub fn iter() -> Iter<'static, Move> {
+        fn iter() -> Iter<'static, Move> {
             use self::Move::*;
             static MOVES: [Move;9] = [U1, U2, U3, R1, R2, R3, F1, F2, F3];
             return MOVES.into_iter()
@@ -142,13 +142,13 @@
     use self::Color as Cl;
 
     // Map the corner positions to facelet positions.
-    pub static cornerFacelet: [[Fc;3];8] = [
+    static cornerFacelet: [[Fc;3];8] = [
         [Fc::U4, Fc::R1, Fc::F2], [Fc::U3, Fc::F1, Fc::L2], [Fc::U1, Fc::L1, Fc::B2], [Fc::U2, Fc::B1, Fc::R2],
         [Fc::D4, Fc::R4, Fc::B3], [Fc::D2, Fc::F4, Fc::R3], [Fc::D1, Fc::L4, Fc::F3], [Fc::D3, Fc::B4, Fc::L3],
     ];
 
     // Map the corner positions to facelet colors.
-    pub static cornerColor: [[Cl;3];8]=[
+    static cornerColor: [[Cl;3];8]=[
         [Cl::U, Cl::R, Cl::F], [Cl::U, Cl::F, Cl::L], [Cl::U, Cl::L, Cl::B], [Cl::U, Cl::B, Cl::R],
         [Cl::D, Cl::R, Cl::B], [Cl::D, Cl::F, Cl::R], [Cl::D, Cl::L, Cl::F], [Cl::D, Cl::B, Cl::L]
     ];
@@ -167,19 +167,19 @@
     ];
 
     /// Represents a 2x2x2 cube on the facelet level with 24 colored facelets
-    pub struct FaceCube {
+    struct FaceCube {
         f: [Color; 4*6]
     }
 
 
     impl FaceCube {
-        pub fn new(f: [Color; 4*6]) -> FaceCube {
+        fn new(f: [Color; 4*6]) -> FaceCube {
             FaceCube{ f: f }
         }
         /// Constructs a facelet cube from a string. See class Facelet(IntEnum) in enums.py for string format.
         ///
         /// The color scheme is detected automatically.
-        pub fn from_string(s: &str) -> Result<FaceCube, &'static str> {
+        fn from_string(s: &str) -> Result<FaceCube, &'static str> {
             if s.len() < 24 {
                 return Err("Error: Cube definition string contains less than 24 facelets")
             }
@@ -257,7 +257,7 @@
         }
 
         /// Gives string representation of the facelet cube.
-        pub fn to_string(&self) -> String {
+        fn to_string(&self) -> String {
             let mut s = String::new();
             for c in self.f.iter() {
                 s += match *c {
@@ -273,7 +273,7 @@
         }
 
         /// Returns a cubie representation of the facelet cube.
-        pub fn to_cubie_cube(&self) -> CubieCube {
+        fn to_cubie_cube(&self) -> CubieCube {
             let mut cp = [Corner::URF; 8]; // invalidate corner permutation
             let mut co = [0 as i32; 8];
 
@@ -330,7 +330,7 @@
     ///
     /// Is also used to represent the 18 cube moves.
     #[derive(Eq,PartialEq,Debug,Clone)]
-    pub struct CubieCube {
+    struct CubieCube {
         cp: [Co;8], // corner permutation
         co: [i32;8], // corner orientation
     }
@@ -339,7 +339,7 @@
         /// Initializes corners and edges.
         /// :param cp: corner permutation
         /// :param co: corner orientation
-        pub fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
+        fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
             CubieCube{
                 cp: if cp.is_none() {
                     [Co::URF, Co::UFL, Co::ULB, Co::UBR, Co::DRB, Co::DFR, Co::DLF, Co::DBL]
@@ -355,7 +355,7 @@
         }
 
         /// Prints string for a cubie cube.
-        pub fn to_str(&self) -> String {
+        fn to_str(&self) -> String {
             let mut s = String::new();
             for i in 0..self.cp.len() {
                 s += &format!("({:?}, {})", self.cp[i], self.co[i]);
@@ -364,7 +364,7 @@
         }
 
         /// Returns a facelet representation of the cube.
-        pub fn to_facelet_cube(&self) -> FaceCube {
+        fn to_facelet_cube(&self) -> FaceCube {
             let mut f = [Color::U; 24];
             for i in 0..8 {
                 let j = self.cp[i];  // corner j is at corner position i
@@ -377,7 +377,7 @@
         }
 
         /// Multiplies this cubie cube with another cubie cube b. Does not change b.
-        pub fn multiply(&self, b: &Self) -> Self {
+        fn multiply(&self, b: &Self) -> Self {
             let mut c_perm = [Co::URF; 8];
             let mut c_ori = [0; 8];
             let mut ori: i32 = 0;
@@ -419,7 +419,7 @@
         }
 
         /// Stores the inverse of this cubie cube in d.
-        pub fn inv_cubie_cube(&self, d: &mut Self) {
+        fn inv_cubie_cube(&self, d: &mut Self) {
             for cref in Co::iter() {
                 let c: Co = *cref;
                 d.cp[self.cp[c as usize] as usize] = c;
@@ -444,7 +444,7 @@
         //
 
         /// The twist of the 8 corners. 0 <= twist < 729. The DBL-corner is fixed.
-        pub fn get_corntwist(&self) -> u32 {
+        fn get_corntwist(&self) -> u32 {
             let mut ret = 0;
             for i in 0..6 { // note: last two corners not included
                 ret = 3 * ret + (self.co[i] as u32);
@@ -453,7 +453,7 @@
             return ret;
         }
 
-        pub fn set_cornertwist(&mut self, mut twist: u32) {
+        fn set_cornertwist(&mut self, mut twist: u32) {
             assert!(twist < 729);
             let mut twistparity = 0;
             for i in (0..6).rev() {
@@ -466,7 +466,7 @@
         }
 
         /// The permutation of the 8 corners. 0 <= corners < 5040. The DLB_corner is fixed.
-        pub fn get_cornperm(&self) -> u32{
+        fn get_cornperm(&self) -> u32{
             let mut perm = self.cp;  // duplicate cp
             let mut b = 0;
             for jref in Co::iter().rev() {
@@ -482,7 +482,7 @@
             return b;
         }
 
-        pub fn set_corners(&mut self, mut idx: u32) {
+        fn set_corners(&mut self, mut idx: u32) {
             assert!(idx < 5040);
             for j in Co::iter() {
                 self.cp[*j as usize] = *j;
@@ -513,7 +513,7 @@
         */
 
         /// Checks if cubiecube is valid
-        pub fn verify(&self) -> Result<(), &'static str> {
+        fn verify(&self) -> Result<(), &'static str> {
             let mut corner_count = [0; 8];
             for c in self.cp.iter() {
                 corner_count[*c as usize] += 1;
@@ -561,7 +561,7 @@
     // these cubes represent the basic cube moves
     //
 
-    pub static basicMoveCube: [&CubieCube; 3] = [
+    static basicMoveCube: [&CubieCube; 3] = [
         //&CubieCube{ cp: cpU, co: coU },
         //&CubieCube{ cp: cpR, co: coR },
         //&CubieCube{ cp: cpF, co: coF },
@@ -598,7 +598,7 @@ for c1 in [Color.U, Color.R, Color.F]:
     static mut CORNTWIST_MOVE: [u32; n_corntwist] = [0; n_corntwist];
 
     // The twist coordinate describes the 3^6 = 729 possible orientations of the 8 corners
-    pub fn get_corntwist() -> &'static [u32; (N_TWIST*N_MOVE)as usize] {
+    fn get_corntwist() -> &'static [u32; (N_TWIST*N_MOVE)as usize] {
         static once: Once = ONCE_INIT;
         unsafe {
             once.call_once(|| { init_corntwist(&mut CORNTWIST_MOVE) });
@@ -626,7 +626,7 @@ for c1 in [Color.U, Color.R, Color.F]:
     static mut CORNPERM_MOVE: [u32; n_cornperm] = [0; n_cornperm];
 
     // The corners coordinate describes the 7! = 5040 permutations of the corners.
-    pub fn get_cornperm() -> &'static [u32; (N_CORNERS*N_MOVE) as usize] {
+    fn get_cornperm() -> &'static [u32; (N_CORNERS*N_MOVE) as usize] {
         static once: Once = ONCE_INIT;
         unsafe {
             once.call_once(|| { init_cornperm(&mut CORNPERM_MOVE) });
@@ -666,7 +666,7 @@ for c1 in [Color.U, Color.R, Color.F]:
     const n_cornerprun: usize = (N_CORNERS * N_TWIST) as usize;
     static mut cornerprun_table: [i32; n_cornerprun] = [-1; n_cornerprun]; // XXX i8
 
-    pub fn get_pruning_table() -> &'static [i32; n_cornerprun] {
+    fn get_pruning_table() -> &'static [i32; n_cornerprun] {
         static once: Once = ONCE_INIT;
         unsafe {
             once.call_once(|| { init_cornerprun_table(&mut cornerprun_table); });
