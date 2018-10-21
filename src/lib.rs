@@ -577,13 +577,24 @@ mod moves {
     use cubie as cb;
     use enums;
     use defs::{N_TWIST, N_CORNERS, N_MOVE};
+    use std::sync::{Once, ONCE_INIT};
 
     // Move table for the the corners.
 
+    const n_corntwist: usize = (N_TWIST * N_MOVE) as usize;
+    static mut CORNTWIST_MOVE: [u32; n_corntwist] = [0; n_corntwist];
+
     // The twist coordinate describes the 3^6 = 729 possible orientations of the 8 corners
-    pub fn get_corntwist() -> [u32; (N_TWIST*N_MOVE)as usize] {
+    pub fn get_corntwist() -> &'static [u32; (N_TWIST*N_MOVE)as usize] {
+        static once: Once = ONCE_INIT;
+        unsafe {
+            once.call_once(|| { init_corntwist(&mut CORNTWIST_MOVE) });
+            return &CORNTWIST_MOVE;
+        }
+    }
+
+    fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
         let mut a = cb::CubieCube::new(None, None);
-        let mut corntwist_move = [0 as u32; (N_TWIST * N_MOVE) as usize];
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
             for jref in [enums::Color::U, enums::Color::R, enums::Color::F].iter() { // three faces U, R, F
@@ -595,14 +606,23 @@ mod moves {
                 a = a.multiply(cb::basicMoveCube[j as usize]); // 4. move restores face
             }
         }
-        return corntwist_move
     }
 
+    const n_cornperm: usize = (N_CORNERS*N_MOVE) as usize;
+    static mut CORNPERM_MOVE: [u32; n_cornperm] = [0; n_cornperm];
+
     // The corners coordinate describes the 7! = 5040 permutations of the corners.
-    pub fn get_cornperm() -> [u32; (N_CORNERS*N_MOVE) as usize] {
+    pub fn get_cornperm() -> &'static [u32; (N_CORNERS*N_MOVE) as usize] {
+        static once: Once = ONCE_INIT;
+        unsafe {
+            once.call_once(|| { init_cornperm(&mut CORNPERM_MOVE) });
+            return &CORNPERM_MOVE;
+        }
+    }
+
+    fn init_cornperm(cornperm_move: &mut [u32; (N_CORNERS*N_MOVE) as usize]) {
         let mut a = cb::CubieCube::new(None, None);
         // TODO: cache as file
-        let mut cornperm_move = [0 as u32; (N_CORNERS * N_MOVE) as usize];
         // Move table for the corners. corner < 40320
         for i in 0..N_CORNERS {
             if (i+1)%200 == 0 {
@@ -618,7 +638,6 @@ mod moves {
                 a = a.multiply(cb::basicMoveCube[j as usize]);
             }
         }
-        return cornperm_move
     }
 }
 
