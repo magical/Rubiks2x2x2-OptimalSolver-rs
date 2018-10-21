@@ -196,7 +196,7 @@ mod face {
                 }
             }
             if !cnt.iter().all(|x| *x == 4) {
-                return Err("Error: Cube definition string ' + s + ' does not contain exactly 4 facelets of each color.")
+                return Err("Error: Cube definition string does not contain exactly 4 facelets of each color.")
             }
             // remap colors if necessary
 
@@ -425,15 +425,17 @@ mod cubie {
         /// The twist of the 8 corners. 0 <= twist < 729. The DBL-corner is fixed.
         pub fn get_corntwist(&self) -> u32 {
             let mut ret = 0;
-            for i in 0..8 {
+            for i in 0..6 { // note: last two corners not included
                 ret = 3 * ret + (self.co[i] as u32);
             }
+            assert!(ret < 729);
             return ret;
         }
 
         pub fn set_cornertwist(&mut self, mut twist: u32) {
+            assert!(twist < 729);
             let mut twistparity = 0;
-            for i in (0..8).rev() {
+            for i in (0..6).rev() {
                 self.co[i] = (twist % 3) as i32;
                 twistparity += self.co[i];
                 twist /= 3;
@@ -441,8 +443,6 @@ mod cubie {
             self.co[Co::DLF as usize] = (3 - twistparity % 3) % 3;
             // XXX need mathematical mod?
         }
-
-
 
         /// The permutation of the 8 corners. 0 <= corners < 5040. The DLB_corner is fixed.
         pub fn get_cornperm(&self) -> u32{
@@ -457,10 +457,12 @@ mod cubie {
                 }
                 b = (j as u32 + 1) * b + k;
             }
+            assert!(b < 5040);
             return b;
         }
 
         pub fn set_corners(&mut self, mut idx: u32) {
+            assert!(idx < 5040);
             for j in Co::iter() {
                 self.cp[*j as usize] = *j;
             }
@@ -578,6 +580,8 @@ mod moves {
     use enums;
     use defs::{N_TWIST, N_CORNERS, N_MOVE};
     use std::sync::{Once, ONCE_INIT};
+    use std::io;
+    use std::io::Write;
 
     // Move table for the the corners.
 
@@ -594,6 +598,7 @@ mod moves {
     }
 
     fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
+        println!("creating move_corntwist table");
         let mut a = cb::CubieCube::new(None, None);
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
@@ -621,16 +626,19 @@ mod moves {
     }
 
     fn init_cornperm(cornperm_move: &mut [u32; (N_CORNERS*N_MOVE) as usize]) {
+        println!("creating move_cornperm table");
         let mut a = cb::CubieCube::new(None, None);
         // TODO: cache as file
         // Move table for the corners. corner < 40320
+        let mut stdout = io::stdout();
         for i in 0..N_CORNERS {
             if (i+1)%200 == 0 {
-                print!(".")
+                print!(".");
+                let _ = stdout.flush();
             }
             a.set_corners(i);
-            for jref in [enums::Color::U, enums::Color::R, enums::Color::F].iter() { // three faces U, R, F
-                let j = *jref;
+            for j in [enums::Color::U, enums::Color::R, enums::Color::F].iter() { // three faces U, R, F
+                let j = *j;
                 for k in 0..3 {
                     a = a.multiply(cb::basicMoveCube[j as usize]);
                     cornperm_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_cornperm();
@@ -638,6 +646,7 @@ mod moves {
                 a = a.multiply(cb::basicMoveCube[j as usize]);
             }
         }
+        println!("");
     }
 }
 
@@ -648,18 +657,33 @@ mod pruning {
     use defs;
     use enums;
     use moves as mv;
+    use std::sync::{Once, ONCE_INIT};
+    use std::io;
+    use std::io::Write;
 
-    /// creates/loads the corner prunig twable
-    pub fn create_cornerprun_table() -> [i32; (defs::N_CORNERS * defs::N_TWIST) as usize] {
+    const n_cornerprun: usize = (defs::N_CORNERS * defs::N_TWIST) as usize;
+    static mut cornerprun_table: [i32; n_cornerprun] = [-1; n_cornerprun]; // XXX i8
 
-        let mut corner_depth = [-1; (defs::N_CORNERS * defs::N_TWIST) as usize];
+    pub fn get_table() -> &'static [i32; n_cornerprun] {
+        static once: Once = ONCE_INIT;
+        unsafe {
+            once.call_once(|| { init_cornerprun_table(&mut cornerprun_table); });
+            return &cornerprun_table;
+        }
+    }
 
-        // XXX
+    /// creates/loads the corner pruning table
+    fn init_cornerprun_table(corner_depth: &mut [i32; n_cornerprun]) {
+
         let cornperm_move = mv::get_cornperm();
         let corntwist_move = mv::get_corntwist();
 
+        println!("creating cornerprun table...");
+        corner_depth[0] = 0;
+
         let mut done = 1;
         let mut depth = 0;
+        let mut stdout = io::stdout();
         while done != defs::N_CORNERS * defs::N_TWIST {
             for corners in 0..defs::N_CORNERS {
                 for twist in 0..defs::N_TWIST {
@@ -673,6 +697,7 @@ mod pruning {
                                 done += 1;
                                 if done % 50000 == 0 {
                                     print!(".");
+                                    let _ = stdout.flush();
                                 }
                             }
                         }
@@ -681,12 +706,11 @@ mod pruning {
             }
             depth += 1
         }
-
-        return corner_depth
+        println!("");
     }
 }
 
-mod solver {
+pub mod solver {
     //! The solve function computes all optimal solving maneuvers
 
     use face;
@@ -708,7 +732,7 @@ mod solver {
             // XXX
             let cornperm_move = mv::get_cornperm();
             let corntwist_move = mv::get_corntwist();
-            let corner_depth = pr::create_cornerprun_table();
+            let corner_depth = pr::get_table();
 
             for m in 0..8 { // en.Move
                 if sofar.len() > 0 {
@@ -742,7 +766,7 @@ mod solver {
 
         let mut solutions: Vec<Vec<u32>> = Vec::new();
         let co_cube = coord::CoordCube::from_cubie_cube(&cc);
-        let corner_depth = pr::create_cornerprun_table(); // XXX
+        let corner_depth = pr::get_table();
         let togo = corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
         let mut sofar: Vec<u32> = Vec::new();
         search(co_cube.cornperm, co_cube.corntwist, &mut sofar, togo, &mut solutions);
@@ -765,6 +789,7 @@ mod tests {
     #[test]
     fn it_works() {
         use solver;
+        println!("starting");
         let _ = solver::solve("UUUURRRRFFFFDDDDLLLLBBBB");
         println!("ok");
     }
