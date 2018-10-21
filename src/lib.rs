@@ -464,10 +464,10 @@ mod cubie {
             for j in Co::iter() {
                 self.cp[*j as usize] = *j;
             }
-            for jref in Co::iter() {
-                let j = *jref as u32;
+            for j in Co::iter() {
+                let j = *j as u32;
                 let mut k = idx % (j+ 1);
-                idx /= j;
+                idx /= j + 1;
                 while k > 0 {
                     rotate_right(&mut self.cp, 0, j as usize);
                     k -= 1;
