@@ -119,6 +119,14 @@ mod enums {
         U1, U2, U3, R1, R2, R3, F1, F2, F3
     }
 
+    impl Move {
+        pub fn iter() -> Iter<'static, Move> {
+            use self::Move::*;
+            static MOVES: [Move;9] = [U1, U2, U3, R1, R2, R3, F1, F2, F3];
+            return MOVES.into_iter()
+        }
+    }
+
 }
 
 mod defs {
@@ -740,7 +748,7 @@ pub mod solver {
     use pruning as pr;
     use defs::{N_TWIST};
 
-    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<u32>, togo: i32, solutions: &mut Vec<Vec<u32>>) {
+    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<en::Move>, togo: i32, solutions: &mut Vec<Vec<en::Move>>) {
         if togo == 0 {
             if solutions.len() == 0 || solutions[solutions.len()-1].len() == sofar.len() {
                 solutions.push(sofar.clone())
@@ -751,15 +759,16 @@ pub mod solver {
             let corntwist_move = mv::get_corntwist();
             let corner_depth = pr::get_table();
 
-            for m in 0..8 { // en.Move
+            for m in en::Move::iter() {
+                let m = *m;
                 if sofar.len() > 0 {
-                    if sofar[sofar.len()-1] / 3 == m / 3 { // successive moves on same face
+                    if sofar[sofar.len()-1] as u32 / 3 == (m as u32) / 3 { // successive moves on same face
                         continue
                     }
                 }
 
-                let cornperm_new = cornperm_move[(9*cornperm + m) as usize];
-                let corntwist_new = corntwist_move[(9*corntwist + m) as usize];
+                let cornperm_new = cornperm_move[(9*cornperm + m as u32) as usize];
+                let corntwist_new = corntwist_move[(9*corntwist + m as u32) as usize];
 
                 if corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
                     continue // impossible to reach solved cube in togo - 1 moves
@@ -781,11 +790,11 @@ pub mod solver {
         let cc = fc.to_cubie_cube();
         let _ = try!(cc.verify());
 
-        let mut solutions: Vec<Vec<u32>> = Vec::new();
+        let mut solutions: Vec<Vec<en::Move>> = Vec::new();
         let co_cube = coord::CoordCube::from_cubie_cube(&cc);
         let corner_depth = pr::get_table();
         let togo = corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
-        let mut sofar: Vec<u32> = Vec::new();
+        let mut sofar: Vec<en::Move> = Vec::new();
         search(co_cube.cornperm, co_cube.corntwist, &mut sofar, togo, &mut solutions);
 
         let mut s = String::new();
