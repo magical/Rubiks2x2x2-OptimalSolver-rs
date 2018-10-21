@@ -316,7 +316,6 @@ mod cubie {
     use defs::{cornerFacelet, cornerColor};
     use enums::{Color,Corner as Co};
     use face;
-    use misc::{rotate_left,rotate_right};
 
     // the basic six cube moves described by permutations and changes in orientation
 
@@ -544,7 +543,25 @@ mod cubie {
 
     }
 
+    // TODO: remove l,r and just use slices
 
+    /// Rotates array arr right between l and r. r is included.
+    pub fn rotate_left<T>(arr: &mut[T], l: usize, r: usize) where T: Copy {
+        let temp = arr[r];
+        for i in (l..r).rev() {
+            arr[i+1] = arr[i]
+        }
+        arr[l] = temp
+    }
+
+    /// Rotates array arr left between l and r. r is included.
+    pub fn rotate_right<T>(arr: &mut [T], l: usize, r: usize) where T: Copy {
+        let temp = arr[l];
+        for i in l..r {
+            arr[i] = arr[i+1]
+        }
+        arr[r] = temp
+    }
 
     //
     // these cubes represent the basic cube moves
@@ -576,30 +593,6 @@ for c1 in [Color.U, Color.R, Color.F]:
 
 */
 
-}
-
-mod misc {
-    //! Miscellaneous functions
-
-    // TODO: remove l,r and just use slices
-
-    /// Rotates array arr right between l and r. r is included.
-    pub fn rotate_left<T>(arr: &mut[T], l: usize, r: usize) where T: Copy {
-        let temp = arr[r];
-        for i in (l..r).rev() {
-            arr[i+1] = arr[i]
-        }
-        arr[l] = temp
-    }
-
-    /// Rotates array arr left between l and r. r is included.
-    pub fn rotate_right<T>(arr: &mut [T], l: usize, r: usize) where T: Copy {
-        let temp = arr[l];
-        for i in l..r {
-            arr[i] = arr[i+1]
-        }
-        arr[r] = temp
-    }
 }
 
 mod moves {
