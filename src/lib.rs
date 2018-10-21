@@ -48,25 +48,29 @@ mod enums {
 
       The names of the facelet positions of the cube
 
-                |********|
-                |*U1**U2*|
-                |********|
-                |*U3**U4*|
-                |********|
+      ```text
+
+                 |********|
+                 |*U1**U2*|
+                 |********|
+                 |*U3**U4*|
+                 |********|
         |********|********|********|********|
         |*L1**L2*|*F1**F2*|*R1**R2*|*B1**B2*|
         |********|********|********|********|
         |*L3**L4*|*F3**F4*|*R3**R4*|*B3**B4*|
         |********|********|********|********|
-                |********|
-                |*D1**D2*|
-                |********|
-                |*D3**D4*|
-                |********|
+                 |********|
+                 |*D1**D2*|
+                 |********|
+                 |*D3**D4*|
+                 |********|
 
-        A cube definition string "UBL..." means for example: In position U1 we have the U-color, in position U2 we have the
-        B-color, in position U3 we have the L color etc. according to the order U1, U2, U3, U4, R1, R2, R3, R4, F1, F2, F3,
-        F4, D1, D2, D3, D4, L1, L2, L3, L4, B1, B2, B3, B4 of the enum constants.
+        ```
+
+      A cube definition string "UBL..." means for example: In position U1 we have the U-color, in position U2 we have the
+      B-color, in position U3 we have the L color etc. according to the order U1, U2, U3, U4, R1, R2, R3, R4, F1, F2, F3,
+      F4, D1, D2, D3, D4, L1, L2, L3, L4, B1, B2, B3, B4 of the enum constants.
     */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Facelet {
