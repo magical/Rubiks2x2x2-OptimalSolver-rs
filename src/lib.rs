@@ -479,7 +479,7 @@ mod cubie {
                 let j = *jref;
                 let mut k = 0;
                 while perm[j as usize] != j {
-                    rotate_left(&mut perm, 0, j as usize);
+                    rotate_left(&mut perm[0..(j as usize + 1)]);
                     k += 1;
                 }
                 b = (j as u32 + 1) * b + k;
@@ -498,7 +498,7 @@ mod cubie {
                 let mut k = idx % (j+ 1);
                 idx /= j + 1;
                 while k > 0 {
-                    rotate_right(&mut self.cp, 0, j as usize);
+                    rotate_right(&mut self.cp[0..(j as usize + 1)]);
                     k -= 1;
                 }
             }
@@ -543,21 +543,21 @@ mod cubie {
 
     }
 
-    // TODO: remove l,r and just use slices
-
-    /// Rotates array arr right between l and r. r is included.
-    pub fn rotate_left<T>(arr: &mut[T], l: usize, r: usize) where T: Copy {
+    /// Rotates array arr right.
+    fn rotate_left<T>(arr: &mut[T]) where T: Copy {
+        let r = arr.len() - 1;
         let temp = arr[r];
-        for i in (l..r).rev() {
+        for i in (0..r).rev() {
             arr[i+1] = arr[i]
         }
-        arr[l] = temp
+        arr[0] = temp
     }
 
-    /// Rotates array arr left between l and r. r is included.
-    pub fn rotate_right<T>(arr: &mut [T], l: usize, r: usize) where T: Copy {
-        let temp = arr[l];
-        for i in l..r {
+    /// Rotates array arr left
+    fn rotate_right<T>(arr: &mut [T]) where T: Copy {
+        let r = arr.len() - 1;
+        let temp = arr[0];
+        for i in 0..r {
             arr[i] = arr[i+1]
         }
         arr[r] = temp
