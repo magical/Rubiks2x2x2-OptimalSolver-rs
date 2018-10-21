@@ -39,13 +39,6 @@
         fn to_str(&self) -> String {
             return format!("(corntwist: {}, cornperm: {})", self.corntwist, self.cornperm)
         }
-
-        fn move_(&mut self, m: u32) {
-            // XXX
-            //self.corntwist = twist_move[(N_MOVE * self.corntwist + m) as usize];
-            //self.cornperm = corners_move[(N_MOVE * self.cornperm + m) as usize];
-            let _ = m;
-        }
     }
 
     //
@@ -310,20 +303,7 @@
     // The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
     //
 
-    // the basic six cube moves described by permutations and changes in orientation
     use self::Corner as Co;
-
-    // Up-move
-    static cpU: [Co;8] = [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL];
-    static coU: [i32;8] = [0, 0, 0, 0, 0, 0, 0, 0];
-
-    // Right-move
-    static cpR: [Co;8] = [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL];  // permutation of the corners
-    static coR: [i32;8] = [2, 0, 0, 1, 2, 1, 0, 0];  // changes of the orientations of the corners
-
-    // Front-move
-    static cpF: [Co;8] = [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL];
-    static coF: [i32;8] = [1, 2, 0, 0, 0, 2, 1, 0];
 
 
     /// Represents a 2x2x2 cube on the cubie level with 8 corner cubies and the corner orientations.
@@ -561,31 +541,18 @@
     // these cubes represent the basic cube moves
     //
 
-    static basicMoveCube: [&CubieCube; 3] = [
-        //&CubieCube{ cp: cpU, co: coU },
-        //&CubieCube{ cp: cpR, co: coR },
-        //&CubieCube{ cp: cpF, co: coF },
+    // the basic six cube moves described by permutations and changes in orientation
 
-        &CubieCube{ cp: [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL], co:  [0, 0, 0, 0, 0, 0, 0, 0]},
-        &CubieCube{ cp: [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL], co: [2, 0, 0, 1, 2, 1, 0, 0]},
+    static basicMoveCube: [&CubieCube; 3] = [
+        // Up-move
+        &CubieCube{ cp: [Co::UBR, Co::URF, Co::UFL, Co::ULB, Co::DRB, Co::DFR, Co::DLF, Co::DBL], co:  [0, 0, 0, 0, 0, 0, 0, 0] },
+
+        // Right-move
+        &CubieCube{ cp: [Co::DFR, Co::UFL, Co::ULB, Co::URF, Co::UBR, Co::DRB, Co::DLF, Co::DBL], co: [2, 0, 0, 1, 2, 1, 0, 0] },
+
+        // Front-move
         &CubieCube{ cp: [Co::UFL, Co::DLF, Co::ULB, Co::UBR, Co::DRB, Co::URF, Co::DFR, Co::DBL], co: [1, 2, 0, 0, 0, 2, 1, 0] },
     ];
-
-
-/*
-    // these cubes represent the all 9 cube moves
-    fn moveCube() -> [CubieCube; 9] {
-
-    }
-
-moveCube = [0] * 9
-for c1 in [Color.U, Color.R, Color.F]:
-    cc = CubieCube()
-    for k1 in range(3):
-        cc.multiply(basicMoveCube[c1])
-        moveCube[3 * c1 + k1] = CubieCube(cc.cp, cc.co)
-
-*/
 
 
     //
