@@ -723,11 +723,9 @@ pub mod solver {
 
     fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<u32>, togo: i32, solutions: &mut Vec<Vec<u32>>) {
         if togo == 0 {
-            /*
-            if solutions.len() == 0 or solutions[-1].len() == sofar.len() {
-                solutions.append(sofar[..])
+            if solutions.len() == 0 || solutions[solutions.len()-1].len() == sofar.len() {
+                solutions.push(sofar.clone())
             }
-            */
         } else {
             // XXX
             let cornperm_move = mv::get_cornperm();
