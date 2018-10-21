@@ -3,11 +3,16 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
+// some "constants"
+const N_MOVE: u32 = 9; // number of possible face moves
+const N_TWIST: u32 = 729; // 3^6 possible corner orientations
+const N_CORNERS: u32 = 5040; // 7! corner permutations in phase 2
+
 mod coord {
     //! The cube on the coordinate level is described by a 3-tuple of natural numbers in phase 1 and phase 2.
     use cubie::CubieCube;
     use moves as mv;
-    use defs::{N_MOVE};
+    use super::{N_MOVE};
 
     const SOLVED: u32 = 0; // 0 is index of solved state (except for u_edges coordinate)
 
@@ -146,10 +151,6 @@ mod defs {
                    [Cl::D, Cl::R, Cl::B], [Cl::D, Cl::F, Cl::R], [Cl::D, Cl::L, Cl::F], [Cl::D, Cl::B, Cl::L]
                    ];
 
-    // some "constants"
-    pub const N_MOVE: u32 = 9; // number of possible face moves
-    pub const N_TWIST: u32 = 729; // 3^6 possible corner orientations
-    pub const N_CORNERS: u32 = 5040; // 7! corner permutations in phase 2
 
 }
 
@@ -312,7 +313,8 @@ mod face {
 mod cubie {
     //! The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
 
-    use defs::{cornerFacelet, cornerColor, N_CORNERS, N_TWIST};
+    use super::{N_CORNERS, N_TWIST};
+    use defs::{cornerFacelet, cornerColor};
     use enums::{Color,Corner as Co};
     use face;
     use misc::{rotate_left,rotate_right};
@@ -605,7 +607,7 @@ mod moves {
     //! Movetables describe the transformation of the coordinates by cube moves.
     use cubie as cb;
     use enums;
-    use defs::{N_TWIST, N_CORNERS, N_MOVE};
+    use super::{N_TWIST, N_CORNERS, N_MOVE};
     use std::sync::{Once, ONCE_INIT};
     use std::io;
     use std::io::Write;
@@ -684,11 +686,12 @@ mod pruning {
     use defs;
     use enums;
     use moves as mv;
+    use super::{N_CORNERS,N_TWIST};
     use std::sync::{Once, ONCE_INIT};
     use std::io;
     use std::io::Write;
 
-    const n_cornerprun: usize = (defs::N_CORNERS * defs::N_TWIST) as usize;
+    const n_cornerprun: usize = (N_CORNERS * N_TWIST) as usize;
     static mut cornerprun_table: [i32; n_cornerprun] = [-1; n_cornerprun]; // XXX i8
 
     pub fn get_table() -> &'static [i32; n_cornerprun] {
@@ -711,14 +714,14 @@ mod pruning {
         let mut done = 1;
         let mut depth = 0;
         let mut stdout = io::stdout();
-        while done != defs::N_CORNERS * defs::N_TWIST {
-            for corners in 0..defs::N_CORNERS {
-                for twist in 0..defs::N_TWIST {
-                    if corner_depth[(defs::N_TWIST * corners + twist) as usize] == depth {
+        while done != N_CORNERS * N_TWIST {
+            for corners in 0..N_CORNERS {
+                for twist in 0..N_TWIST {
+                    if corner_depth[(N_TWIST * corners + twist) as usize] == depth {
                         for m in 0..9 { // enums::Move
                             let corners1 = cornperm_move[(9*corners + m) as usize];
                             let twist1 = corntwist_move[(9*twist + m) as usize];
-                            let idx1 = (defs::N_TWIST * corners1 + twist1) as usize;
+                            let idx1 = (N_TWIST * corners1 + twist1) as usize;
                             if corner_depth[idx1] == -1 { // entry not yet filled
                                 corner_depth[idx1] = depth+1;
                                 done += 1;
@@ -746,7 +749,7 @@ pub mod solver {
     use enums as en;
     use moves as mv;
     use pruning as pr;
-    use defs::{N_TWIST};
+    use super::{N_TWIST};
 
     fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<en::Move>, togo: i32, solutions: &mut Vec<Vec<en::Move>>) {
         if togo == 0 {
