@@ -289,13 +289,6 @@ mod cubie {
     use enums::{Color,Corner as Co};
     use face;
     use misc::{rotate_left,rotate_right};
-    extern crate rand;
-
-    fn randrange(a: u32, b: u32) -> u32 {
-        use cubie::rand::Rng;
-        let num = rand::thread_rng().gen_range(a, b);
-        return num;
-    }
 
     // the basic six cube moves described by permutations and changes in orientation
 
@@ -486,7 +479,7 @@ mod cubie {
         // end coordinates for 2x2x2 cube
         //
 
-        // other usefull functions
+        // other useful functions
 
         /*
         def randomize(self):

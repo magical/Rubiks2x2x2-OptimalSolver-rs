@@ -7,4 +7,3 @@ authors = [
 ]
 
 [dependencies]
-rand = "0.4"
