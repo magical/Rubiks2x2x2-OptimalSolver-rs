@@ -3,16 +3,19 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-// some "constants"
-const N_MOVE: u32 = 9; // number of possible face moves
-const N_TWIST: u32 = 729; // 3^6 possible corner orientations
-const N_CORNERS: u32 = 5040; // 7! corner permutations in phase 2
+    use std::io;
+    use std::io::Write;
+    use std::sync::{Once, ONCE_INIT};
+    use std::slice::Iter;
 
-mod coord {
-    //! The cube on the coordinate level is described by a 3-tuple of natural numbers in phase 1 and phase 2.
-    use cubie::CubieCube;
-    use moves as mv;
-    use super::{N_MOVE};
+    // some "constants"
+    const N_MOVE: u32 = 9; // number of possible face moves
+    const N_TWIST: u32 = 729; // 3^6 possible corner orientations
+    const N_CORNERS: u32 = 5040; // 7! corner permutations in phase 2
+
+    //
+    // The cube on the coordinate level is described by a 3-tuple of natural numbers in phase 1 and phase 2.
+    //
 
     const SOLVED: u32 = 0; // 0 is index of solved state (except for u_edges coordinate)
 
@@ -39,15 +42,15 @@ mod coord {
 
         pub fn move_(&mut self, m: u32) {
             // XXX
-            //self.corntwist = mv::twist_move[(N_MOVE * self.corntwist + m) as usize];
-            //self.cornperm = mv::corners_move[(N_MOVE * self.cornperm + m) as usize];
+            //self.corntwist = twist_move[(N_MOVE * self.corntwist + m) as usize];
+            //self.cornperm = corners_move[(N_MOVE * self.cornperm + m) as usize];
             let _ = m;
         }
     }
-}
 
-mod enums {
-    //! Enumerations which improve the readability of the code
+    //
+    // Enumerations which improve the readability of the code
+    //
 
     /**
 
@@ -109,7 +112,6 @@ mod enums {
         URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL,
     }
 
-    use std::slice::Iter;
     impl Corner {
         pub fn iter() -> Iter<'static, Corner> {
             use self::Corner::*;
@@ -132,13 +134,12 @@ mod enums {
         }
     }
 
-}
+    //
+    // some definitions
+    //
 
-mod defs {
-    //! some definitions and constants
-
-    use enums::Facelet as Fc;
-    use enums::Color as Cl;
+    use self::Facelet as Fc;
+    use self::Color as Cl;
 
     // Map the corner positions to facelet positions.
     pub static cornerFacelet: [[Fc;3];8] = [
@@ -151,13 +152,10 @@ mod defs {
         [Cl::U, Cl::R, Cl::F], [Cl::U, Cl::F, Cl::L], [Cl::U, Cl::L, Cl::B], [Cl::U, Cl::B, Cl::R],
         [Cl::D, Cl::R, Cl::B], [Cl::D, Cl::F, Cl::R], [Cl::D, Cl::L, Cl::F], [Cl::D, Cl::B, Cl::L]
     ];
-}
 
-mod face {
-    //! The 2x2x2 cube on the facelet level is described by positions of the colored stickers.
-    use defs::{cornerFacelet,cornerColor};
-    use  enums::{Color,Corner};
-    use cubie::{CubieCube};
+    //
+    // The 2x2x2 cube on the facelet level is described by positions of the colored stickers.
+    //
 
     static default_faces: [Color; 4*6] = [
         Color::U, Color::U, Color::U, Color::U,
@@ -307,17 +305,13 @@ mod face {
         }
     }
 
-}
 
-mod cubie {
-    //! The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
-
-    use super::{N_CORNERS, N_TWIST};
-    use defs::{cornerFacelet, cornerColor};
-    use enums::{Color,Corner as Co};
-    use face;
+    //
+    // The 2x2x2 cube on the cubie level is described by the permutation and orientations of the corners
+    //
 
     // the basic six cube moves described by permutations and changes in orientation
+    use self::Corner as Co;
 
     // Up-move
     static cpU: [Co;8] = [Co::UBR, Co::URF, Co::UFL, Co::ULB,  Co::DRB, Co::DFR, Co::DLF, Co::DBL];
@@ -370,7 +364,7 @@ mod cubie {
         }
 
         /// Returns a facelet representation of the cube.
-        pub fn to_facelet_cube(&self) -> face::FaceCube {
+        pub fn to_facelet_cube(&self) -> FaceCube {
             let mut f = [Color::U; 24];
             for i in 0..8 {
                 let j = self.cp[i];  // corner j is at corner position i
@@ -379,7 +373,7 @@ mod cubie {
                     f[cornerFacelet[i][((k + ori) % 3) as usize] as usize] = cornerColor[j as usize][k as usize]
                 }
             }
-            return face::FaceCube::new(f);
+            return FaceCube::new(f);
         }
 
         /// Multiplies this cubie cube with another cubie cube b. Does not change b.
@@ -593,16 +587,10 @@ for c1 in [Color.U, Color.R, Color.F]:
 
 */
 
-}
 
-mod moves {
-    //! Movetables describe the transformation of the coordinates by cube moves.
-    use cubie as cb;
-    use enums;
-    use super::{N_TWIST, N_CORNERS, N_MOVE};
-    use std::sync::{Once, ONCE_INIT};
-    use std::io;
-    use std::io::Write;
+    //
+    // Movetables describe the transformation of the coordinates by cube moves.
+    //
 
     // Move table for the the corners.
 
@@ -620,16 +608,16 @@ mod moves {
 
     fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
         println!("creating move_corntwist table");
-        let mut a = cb::CubieCube::new(None, None);
+        let mut a = CubieCube::new(None, None);
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
-            for jref in [enums::Color::U, enums::Color::R, enums::Color::F].iter() { // three faces U, R, F
+            for jref in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
                 let j = *jref;
                 for k in 0..3 { // three moves for each face, for example U, U2, U3 = U'
-                    a = a.multiply(cb::basicMoveCube[j as usize]);
+                    a = a.multiply(basicMoveCube[j as usize]);
                     corntwist_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_corntwist();
                 }
-                a = a.multiply(cb::basicMoveCube[j as usize]); // 4. move restores face
+                a = a.multiply(basicMoveCube[j as usize]); // 4. move restores face
             }
         }
     }
@@ -648,7 +636,7 @@ mod moves {
 
     fn init_cornperm(cornperm_move: &mut [u32; (N_CORNERS*N_MOVE) as usize]) {
         println!("creating move_cornperm table");
-        let mut a = cb::CubieCube::new(None, None);
+        let mut a = CubieCube::new(None, None);
         // TODO: cache as file
         // Move table for the corners. corner < 40320
         let mut stdout = io::stdout();
@@ -658,35 +646,27 @@ mod moves {
                 let _ = stdout.flush();
             }
             a.set_corners(i);
-            for j in [enums::Color::U, enums::Color::R, enums::Color::F].iter() { // three faces U, R, F
+            for j in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
                 let j = *j;
                 for k in 0..3 {
-                    a = a.multiply(cb::basicMoveCube[j as usize]);
+                    a = a.multiply(basicMoveCube[j as usize]);
                     cornperm_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_cornperm();
                 }
-                a = a.multiply(cb::basicMoveCube[j as usize]);
+                a = a.multiply(basicMoveCube[j as usize]);
             }
         }
         println!("");
     }
-}
 
-mod pruning {
-    //! The pruning table cuts the search tree during the search.
-    //! In this case it it gives the exact distance to the solved state.
-
-    use defs;
-    use enums;
-    use moves as mv;
-    use super::{N_CORNERS,N_TWIST};
-    use std::sync::{Once, ONCE_INIT};
-    use std::io;
-    use std::io::Write;
+    //
+    // The pruning table cuts the search tree during the search.
+    // In this case it it gives the exact distance to the solved state.
+    //
 
     const n_cornerprun: usize = (N_CORNERS * N_TWIST) as usize;
     static mut cornerprun_table: [i32; n_cornerprun] = [-1; n_cornerprun]; // XXX i8
 
-    pub fn get_table() -> &'static [i32; n_cornerprun] {
+    pub fn get_pruning_table() -> &'static [i32; n_cornerprun] {
         static once: Once = ONCE_INIT;
         unsafe {
             once.call_once(|| { init_cornerprun_table(&mut cornerprun_table); });
@@ -697,8 +677,8 @@ mod pruning {
     /// creates/loads the corner pruning table
     fn init_cornerprun_table(corner_depth: &mut [i32; n_cornerprun]) {
 
-        let cornperm_move = mv::get_cornperm();
-        let corntwist_move = mv::get_corntwist();
+        let cornperm_move = get_cornperm();
+        let corntwist_move = get_corntwist();
 
         println!("creating cornerprun table...");
         corner_depth[0] = 0;
@@ -710,7 +690,7 @@ mod pruning {
             for corners in 0..N_CORNERS {
                 for twist in 0..N_TWIST {
                     if corner_depth[(N_TWIST * corners + twist) as usize] == depth {
-                        for m in 0..9 { // enums::Move
+                        for m in 0..9 { // Move
                             let corners1 = cornperm_move[(9*corners + m) as usize];
                             let twist1 = corntwist_move[(9*twist + m) as usize];
                             let idx1 = (N_TWIST * corners1 + twist1) as usize;
@@ -730,31 +710,23 @@ mod pruning {
         }
         println!("");
     }
-}
 
-pub mod solver {
-    //! The solve function computes all optimal solving maneuvers
+    //
+    // The solve function computes all optimal solving maneuvers
+    //
 
-    use face;
-    use cubie;
-    use coord;
-    use enums as en;
-    use moves as mv;
-    use pruning as pr;
-    use super::{N_TWIST};
-
-    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<en::Move>, togo: i32, solutions: &mut Vec<Vec<en::Move>>) {
+    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<Move>, togo: i32, solutions: &mut Vec<Vec<Move>>) {
         if togo == 0 {
             if solutions.len() == 0 || solutions[solutions.len()-1].len() == sofar.len() {
                 solutions.push(sofar.clone())
             }
         } else {
             // XXX
-            let cornperm_move = mv::get_cornperm();
-            let corntwist_move = mv::get_corntwist();
-            let corner_depth = pr::get_table();
+            let cornperm_move = get_cornperm();
+            let corntwist_move = get_corntwist();
+            let corner_depth = get_pruning_table();
 
-            for m in en::Move::iter() {
+            for m in Move::iter() {
                 let m = *m;
                 if sofar.len() > 0 {
                     if sofar[sofar.len()-1] as u32 / 3 == (m as u32) / 3 { // successive moves on same face
@@ -781,15 +753,15 @@ pub mod solver {
     /// :param cubestring: The format of the string is given in the Facelet class defined in the file enums.py
     /// :return A list of all optimal solving maneuvers
     pub fn solve(cubestring: &str) -> Result<String,&'static str> {
-        let fc = try!(face::FaceCube::from_string(cubestring));
+        let fc = try!(FaceCube::from_string(cubestring));
         let cc = fc.to_cubie_cube();
         let _ = try!(cc.verify());
 
-        let mut solutions: Vec<Vec<en::Move>> = Vec::new();
-        let co_cube = coord::CoordCube::from_cubie_cube(&cc);
-        let corner_depth = pr::get_table();
+        let mut solutions: Vec<Vec<Move>> = Vec::new();
+        let co_cube = CoordCube::from_cubie_cube(&cc);
+        let corner_depth = get_pruning_table();
         let togo = corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
-        let mut sofar: Vec<en::Move> = Vec::new();
+        let mut sofar: Vec<Move> = Vec::new();
         search(co_cube.cornperm, co_cube.corntwist, &mut sofar, togo, &mut solutions);
 
         let mut s = String::new();
@@ -803,15 +775,13 @@ pub mod solver {
         }
         return Ok(s);
     }
-}
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn it_works() {
-        use solver;
         println!("starting");
-        let _ = solver::solve("UUUURRRRFFFFDDDDLLLLBBBB");
+        let _ = super::solve("UUUURRRRFFFFDDDDLLLLBBBB");
         println!("ok");
     }
 }

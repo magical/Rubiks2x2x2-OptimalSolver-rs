@@ -1,5 +1,5 @@
 extern crate Rubiks2x2x2_OptimalSolver;
-use Rubiks2x2x2_OptimalSolver::solver;
+use Rubiks2x2x2_OptimalSolver as solver;
 
 fn main() {
     println!("starting");
