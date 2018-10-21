@@ -89,6 +89,15 @@ mod enums {
         U, R, F, D, L, B,
     }
 
+    impl Color {
+        pub fn iter() -> Iter<'static, Color> {
+            use self::Color::*;
+            static COLORS: [Color;6] = [U, R, F, D, L, B];
+            return COLORS.into_iter()
+
+        }
+    }
+
     /** The names of the corner positions of the cube. Corner URF e.g. has an U(p), a R(ight) and a F(ront) facelet. */
     #[derive(Eq,PartialEq,Debug,Copy,Clone)]
     pub enum Corner {
@@ -198,37 +207,47 @@ mod face {
             if !cnt.iter().all(|x| *x == 4) {
                 return Err("Error: Cube definition string does not contain exactly 4 facelets of each color.")
             }
+
             // remap colors if necessary
 
-            /*
-            col = [self.f[cornerFacelet[Corner.DBL][i]] for i in range(3)]  # colors of the DBL-corner
-            map_col = [-1] * 6
-            for i in range(3):
-                map_col[col[i]] = cornerColor[Corner.DBL][i]  # map colors to right colors
-            # now remap the remaining colors, try all possibilites
-            a = ((Color.U, Color.R, Color.F), (Color.U, Color.F, Color.R), (Color.R, Color.U, Color.F),
-                 (Color.R, Color.F, Color.U), (Color.F, Color.U, Color.R), (Color.F, Color.R, Color.U))
-            empty = []
-            for i in Color:
-                if map_col[i] == -1:
-                    empty.append(i)  # empty contains the 3 indices of the yet nonmapped colors
-            fsave = self.f[:]
-            for c in a:
-                for i in range(3):
-                    map_col[empty[i]] = c[i]
-                self.f = fsave[:]
-                for i in range(24):
-                    self.f[i] = map_col[self.f[i]]  # remap the colors
-                cc = self.to_cubie_cube()
-                s = cc.verify()
-                if s == CUBE_OK:
-                    return True
+            let mut col = [Color::U; 3];
+            for i in 0..3 {
+                col[i] = f[cornerFacelet[Corner::DBL as usize][i] as usize]  // colors of the DBL-corner
+            }
+            let mut map_col = [None; 6];
+            for i in 0..3 {
+                map_col[col[i] as usize] = Some(cornerColor[Corner::DBL as usize][i])  // map colors to right colors
+            }
+            // now remap the remaining colors, try all possibilites
+            let a = vec![
+                [Color::U, Color::R, Color::F], [Color::U, Color::F, Color::R], [Color::R, Color::U, Color::F],
+                [Color::R, Color::F, Color::U], [Color::F, Color::U, Color::R], [Color::F, Color::R, Color::U]];
+            let mut empty = vec![];
+            for i in Color::iter() {
+                let i = *i;
+                if map_col[i as usize].is_none() {
+                    empty.push(i as usize)  // empty contains the 3 indices of the yet nonmapped colors
+                }
+            }
 
-            return 'Error: Facelet configuration does not define a valid cube.'
+            let fsave = f;
+            for c in a {
+                for i in 0..3 {
+                    map_col[empty[i]] = Some(c[i]);
+                }
+                let mut f = fsave.clone();
+                for i in 0..24 {
+                    f[i] = map_col[fsave[i] as usize].unwrap();  // remap the colors
+                }
+                let fc = FaceCube{f: f};
+                let cc = fc.to_cubie_cube();
+                if cc.verify().is_ok() {
+                    return Ok(fc);
+                }
+            }
 
-            */
+            return Err("Error: Facelet configuration does not define a valid cube.")
 
-            return Ok(FaceCube{ f: f });
         }
 
         /// Gives string representation of the facelet cube.
