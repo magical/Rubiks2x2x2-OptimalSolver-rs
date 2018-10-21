@@ -747,3 +747,13 @@ mod solver {
         return Ok(s);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        use solver;
+        let _ = solver::solve("UUUURRRRFFFFDDDDLLLLBBBB");
+        println!("ok");
+    }
+}
