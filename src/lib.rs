@@ -682,35 +682,40 @@
     // The solve function computes all optimal solving maneuvers
     //
 
-    fn search(cornperm: u32, corntwist: u32, sofar: &mut Vec<Move>, togo: i32, solutions: &mut Vec<Vec<Move>>) {
-        if togo == 0 {
-            if solutions.len() == 0 || solutions[solutions.len()-1].len() == sofar.len() {
-                solutions.push(sofar.clone())
-            }
-        } else {
-            // XXX
-            let cornperm_move = get_cornperm();
-            let corntwist_move = get_corntwist();
-            let corner_depth = get_pruning_table();
+    struct Solver<'a> {
+        solutions: Vec<Vec<Move>>,
+        sofar: Vec<Move>,
+        cornperm_move: &'a [u32; n_cornperm],
+        corntwist_move: &'a [u32; n_corntwist],
+        corner_depth: &'a [i32; n_cornerprun],
+    }
 
-            for m in Move::iter() {
-                let m = *m;
-                if sofar.len() > 0 {
-                    if sofar[sofar.len()-1] as u32 / 3 == (m as u32) / 3 { // successive moves on same face
-                        continue
+    impl<'a> Solver<'a> {
+        fn search(&mut self, cornperm: u32, corntwist: u32, togo: i32) {
+            if togo == 0 {
+                if self.solutions.len() == 0 || self.solutions[self.solutions.len()-1].len() == self.sofar.len() {
+                    self.solutions.push(self.sofar.clone())
+                }
+            } else {
+                for m in Move::iter() {
+                    let m = *m;
+                    if self.sofar.len() > 0 {
+                        if self.sofar[self.sofar.len()-1] as u32 / 3 == (m as u32) / 3 { // successive moves on same face
+                            continue
+                        }
                     }
+
+                    let cornperm_new = self.cornperm_move[(9*cornperm + m as u32) as usize];
+                    let corntwist_new = self.corntwist_move[(9*corntwist + m as u32) as usize];
+
+                    if self.corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
+                        continue // impossible to reach solved cube in togo - 1 moves
+                    }
+
+                    self.sofar.push(m);
+                    self.search(cornperm_new, corntwist_new, togo - 1);
+                    self.sofar.pop();
                 }
-
-                let cornperm_new = cornperm_move[(9*cornperm + m as u32) as usize];
-                let corntwist_new = corntwist_move[(9*corntwist + m as u32) as usize];
-
-                if corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
-                    continue // impossible to reach solved cube in togo - 1 moves
-                }
-
-                sofar.push(m);
-                search(cornperm_new, corntwist_new, sofar, togo - 1, solutions);
-                sofar.pop();
             }
         }
     }
@@ -724,12 +729,20 @@
         let cc = fc.to_cubie_cube();
         let _ = try!(cc.verify());
 
-        let mut solutions: Vec<Vec<Move>> = Vec::new();
+        let mut solver = Solver {
+            solutions: Vec::new(),
+            sofar: Vec::new(),
+
+            corntwist_move: get_corntwist(),
+            cornperm_move: get_cornperm(),
+            corner_depth: get_pruning_table(),
+        };
+
         let co_cube = CoordCube::from_cubie_cube(&cc);
-        let corner_depth = get_pruning_table();
-        let togo = corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
-        let mut sofar: Vec<Move> = Vec::new();
-        search(co_cube.cornperm, co_cube.corntwist, &mut sofar, togo, &mut solutions);
+        let togo = solver.corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
+        solver.search(co_cube.cornperm, co_cube.corntwist, togo);
+
+        let solutions = solver.solutions;
 
         let mut s = String::new();
         for sol in solutions.iter() {
