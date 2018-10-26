@@ -393,8 +393,9 @@
             }
         }
 
-        /// Stores the inverse of this cubie cube in d.
-        fn inv_cubie_cube(&self, d: &mut Self) {
+        /// Returns inverse of this cubie cube.
+        fn inv(&self) -> Self {
+            let mut d = Self::new();
             for c in Corner::iter() {
                 let c = *c;
                 d.cp[self.cp[c as usize] as usize] = c;
@@ -411,6 +412,7 @@
                     }
                 }
             }
+            return d;
         }
 
 
