@@ -19,6 +19,7 @@
     /// Represents a 2x2x2 cube on the coordinate level.
     ///
     /// A state is uniquely determined by the coordinates corntwist and cornperm.
+    #[derive(Eq,PartialEq,Debug,Clone)]
     struct CoordCube {
         corntwist: u32, // twist of corners
         cornperm: u32, // permutations of corners
@@ -558,6 +559,15 @@
         cornperm_move: [u16; n_cornperm],
     }
 
+    impl Group {
+        fn apply_move(&self, c: &CoordCube, m: Move) -> CoordCube {
+            CoordCube{
+                cornperm: self.cornperm_move[(N_MOVE*c.cornperm + m as u32) as usize] as u32,
+                corntwist: self.corntwist_move[(N_MOVE*c.corntwist + m as u32) as usize] as u32,
+            }
+        }
+    }
+
     const n_corntwist: usize = (N_TWIST * N_MOVE) as usize;
     const n_cornperm: usize = (N_CORNERS*N_MOVE) as usize;
 
@@ -643,11 +653,11 @@
         while done != N_CORNERS * N_TWIST {
             for corners in 0..N_CORNERS {
                 for twist in 0..N_TWIST {
+                    let cube = CoordCube{ cornperm: corners, corntwist: twist };
                     if corner_depth[(N_TWIST * corners + twist) as usize] == depth {
-                        for m in 0..9 { // Move
-                            let corners1 = group.cornperm_move[(9*corners + m) as usize] as u32;
-                            let twist1 = group.corntwist_move[(9*twist + m) as usize] as u32;
-                            let idx1 = (N_TWIST * corners1 + twist1) as usize;
+                        for m in Move::iter() { // Move
+                            let cube1 = group.apply_move(&cube, *m);
+                            let idx1 = (N_TWIST * cube1.cornperm + cube1.corntwist) as usize;
                             if corner_depth[idx1] == -1 { // entry not yet filled
                                 corner_depth[idx1] = depth+1;
                                 done += 1;
@@ -672,11 +682,9 @@
     }
 
     impl<'a> Solver<'a> {
-        fn search(&mut self, cornperm: u32, corntwist: u32, togo: i8) {
+        fn search(&mut self, cube: CoordCube, togo: i8) {
             if togo == 0 {
-                if self.solutions.len() == 0 || self.solutions[self.solutions.len()-1].len() == self.sofar.len() {
-                    self.solutions.push(self.sofar.clone())
-                }
+                self.solutions.push(self.sofar.clone())
             } else {
                 for m in Move::iter() {
                     let m = *m;
@@ -686,15 +694,13 @@
                         }
                     }
 
-                    let cornperm_new = self.group.cornperm_move[(9*cornperm + m as u32) as usize] as u32;
-                    let corntwist_new = self.group.corntwist_move[(9*corntwist + m as u32) as usize] as u32;
-
-                    if self.corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
+                    let cube_new = self.group.apply_move(&cube, m);
+                    if self.corner_depth[(N_TWIST * cube_new.cornperm + cube_new.corntwist) as usize] >= togo {
                         continue // impossible to reach solved cube in togo - 1 moves
                     }
 
                     self.sofar.push(m);
-                    self.search(cornperm_new, corntwist_new, togo - 1);
+                    self.search(cube_new, togo - 1);
                     self.sofar.pop();
                 }
             }
@@ -720,7 +726,7 @@
 
         let co_cube = CoordCube::from_cubie_cube(&cc);
         let togo = solver.corner_depth[(N_TWIST * co_cube.cornperm + co_cube.corntwist) as usize];
-        solver.search(co_cube.cornperm, co_cube.corntwist, togo);
+        solver.search(co_cube, togo);
 
         let solutions = solver.solutions;
 
