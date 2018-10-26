@@ -302,7 +302,7 @@
                 }
             }
 
-            return CubieCube::new(Some(cp), Some(co))
+            return CubieCube{ cp: cp, co: co }
         }
     }
 
@@ -324,21 +324,11 @@
     }
 
     impl CubieCube {
-        /// Initializes corners and edges.
-        /// :param cp: corner permutation
-        /// :param co: corner orientation
-        fn new(cp: Option<[Co;8]>, co: Option<[i32;8]>) -> CubieCube {
+        /// Constructs a cube in the solved position.
+        fn new() -> CubieCube {
             CubieCube{
-                cp: if cp.is_none() {
-                    [Co::URF, Co::UFL, Co::ULB, Co::UBR, Co::DRB, Co::DFR, Co::DLF, Co::DBL]
-                } else {
-                    cp.unwrap()
-                },
-                co: if co.is_none() {
-                    [0; 8]
-                } else {
-                    co.unwrap()
-                },
+                cp: [Co::URF, Co::UFL, Co::ULB, Co::UBR, Co::DRB, Co::DFR, Co::DLF, Co::DBL],
+                co: [0; 8],
             }
         }
 
@@ -597,7 +587,7 @@
 
     fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
         println!("creating move_corntwist table");
-        let mut a = CubieCube::new(None, None);
+        let mut a = CubieCube::new();
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
             for jref in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
@@ -613,7 +603,7 @@
 
     fn init_cornperm(cornperm_move: &mut [u32; (N_CORNERS*N_MOVE) as usize]) {
         println!("creating move_cornperm table");
-        let mut a = CubieCube::new(None, None);
+        let mut a = CubieCube::new();
         // TODO: cache as file
         // Move table for the corners. corner < 40320
         let mut stdout = io::stdout();
