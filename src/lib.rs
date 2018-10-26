@@ -569,16 +569,30 @@
 
     // Move table for the the corners.
 
-    const n_corntwist: usize = (N_TWIST * N_MOVE) as usize;
-    static mut CORNTWIST_MOVE: [u32; n_corntwist] = [0; n_corntwist];
+    /// Group performs operations in the Rubiks cube group.
+    struct Group {
+        corntwist_move: [u32; n_corntwist],
+        cornperm_move: [u32; n_cornperm],
+    }
 
-    // The twist coordinate describes the 3^6 = 729 possible orientations of the 8 corners
-    fn get_corntwist() -> &'static [u32; (N_TWIST*N_MOVE)as usize] {
+    const n_corntwist: usize = (N_TWIST * N_MOVE) as usize;
+    const n_cornperm: usize = (N_CORNERS*N_MOVE) as usize;
+
+    static mut GROUP: Group = Group{
+        // The twist coordinate describes the 3^6 = 729 possible orientations of the 8 corners
+        corntwist_move: [0; n_corntwist],
+
+        // The corners coordinate describes the 7! = 5040 permutations of the corners.
+        cornperm_move: [0; n_cornperm],
+    };
+
+    fn get_group() -> &'static Group {
         static once: Once = ONCE_INIT;
-        unsafe {
-            once.call_once(|| { init_corntwist(&mut CORNTWIST_MOVE) });
-            return &CORNTWIST_MOVE;
-        }
+        once.call_once(|| {
+            init_corntwist(unsafe { &mut GROUP.corntwist_move });
+            init_cornperm(unsafe { &mut GROUP.cornperm_move });
+        });
+        return unsafe{ &GROUP };
     }
 
     fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
@@ -594,18 +608,6 @@
                 }
                 a = a.multiply(basicMoveCube[j as usize]); // 4. move restores face
             }
-        }
-    }
-
-    const n_cornperm: usize = (N_CORNERS*N_MOVE) as usize;
-    static mut CORNPERM_MOVE: [u32; n_cornperm] = [0; n_cornperm];
-
-    // The corners coordinate describes the 7! = 5040 permutations of the corners.
-    fn get_cornperm() -> &'static [u32; (N_CORNERS*N_MOVE) as usize] {
-        static once: Once = ONCE_INIT;
-        unsafe {
-            once.call_once(|| { init_cornperm(&mut CORNPERM_MOVE) });
-            return &CORNPERM_MOVE;
         }
     }
 
@@ -652,8 +654,7 @@
     /// creates/loads the corner pruning table
     fn init_cornerprun_table(corner_depth: &mut [i32; n_cornerprun]) {
 
-        let cornperm_move = get_cornperm();
-        let corntwist_move = get_corntwist();
+        let group = get_group();
 
         println!("creating cornerprun table...");
         corner_depth[0] = 0;
@@ -666,8 +667,8 @@
                 for twist in 0..N_TWIST {
                     if corner_depth[(N_TWIST * corners + twist) as usize] == depth {
                         for m in 0..9 { // Move
-                            let corners1 = cornperm_move[(9*corners + m) as usize];
-                            let twist1 = corntwist_move[(9*twist + m) as usize];
+                            let corners1 = group.cornperm_move[(9*corners + m) as usize];
+                            let twist1 = group.corntwist_move[(9*twist + m) as usize];
                             let idx1 = (N_TWIST * corners1 + twist1) as usize;
                             if corner_depth[idx1] == -1 { // entry not yet filled
                                 corner_depth[idx1] = depth+1;
@@ -693,8 +694,7 @@
     struct Solver<'a> {
         solutions: Vec<Vec<Move>>,
         sofar: Vec<Move>,
-        cornperm_move: &'a [u32; n_cornperm],
-        corntwist_move: &'a [u32; n_corntwist],
+        group: &'a Group,
         corner_depth: &'a [i32; n_cornerprun],
     }
 
@@ -713,8 +713,8 @@
                         }
                     }
 
-                    let cornperm_new = self.cornperm_move[(9*cornperm + m as u32) as usize];
-                    let corntwist_new = self.corntwist_move[(9*corntwist + m as u32) as usize];
+                    let cornperm_new = self.group.cornperm_move[(9*cornperm + m as u32) as usize];
+                    let corntwist_new = self.group.corntwist_move[(9*corntwist + m as u32) as usize];
 
                     if self.corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
                         continue // impossible to reach solved cube in togo - 1 moves
@@ -741,8 +741,7 @@
             solutions: Vec::new(),
             sofar: Vec::new(),
 
-            corntwist_move: get_corntwist(),
-            cornperm_move: get_cornperm(),
+            group: get_group(),
             corner_depth: get_pruning_table(),
         };
 
