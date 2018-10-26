@@ -259,9 +259,8 @@
 
         /// Gives string representation of the facelet cube.
         fn to_string(&self) -> String {
-            let mut s = String::new();
-            for c in self.f.iter() {
-                s += match *c {
+            self.f.iter().map(|c|
+                match *c {
                     Color::U => "U",
                     Color::R => "R",
                     Color::F => "F",
@@ -269,8 +268,7 @@
                     Color::L => "L",
                     Color::B => "B",
                 }
-            }
-            return s
+            ).collect()
         }
 
         /// Returns a cubie representation of the facelet cube.
@@ -502,10 +500,7 @@
                 }
             }
 
-            let mut s = 0;
-            for i in self.co.iter() {
-                s += *i;
-            }
+            let s: i32 = self.co.iter().sum();
             if s % 3 != 0 {
                 return Err("Error: Total corner twist is wrong.");
             }
