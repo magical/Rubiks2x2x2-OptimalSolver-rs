@@ -91,7 +91,7 @@
 
     impl Color {
         fn iter() -> Iter<'static, Color> {
-            use self::Color::*;
+            use Color::*;
             static COLORS: [Color;6] = [U, R, F, D, L, B];
             return COLORS.into_iter()
 
@@ -106,7 +106,7 @@
 
     impl Corner {
         fn iter() -> Iter<'static, Corner> {
-            use self::Corner::*;
+            use Corner::*;
             static CORNERS: [Corner;8] = [URF, UFL, ULB, UBR, DRB, DFR, DLF, DBL];
             return CORNERS.into_iter()
         }
@@ -120,7 +120,7 @@
 
     impl Move {
         fn iter() -> Iter<'static, Move> {
-            use self::Move::*;
+            use Move::*;
             static MOVES: [Move;9] = [U1, U2, U3, R1, R2, R3, F1, F2, F3];
             return MOVES.into_iter()
         }
@@ -143,7 +143,7 @@
     use self::Color as Cl;
 
     // Map the corner positions to facelet positions.
-    static cornerFacelet: [[Fc;3];8] = [
+    static cornerFacelet: [[Facelet;3];8] = [
         [Fc::U4, Fc::R1, Fc::F2], [Fc::U3, Fc::F1, Fc::L2], [Fc::U1, Fc::L1, Fc::B2], [Fc::U2, Fc::B1, Fc::R2],
         [Fc::D4, Fc::R4, Fc::B3], [Fc::D2, Fc::F4, Fc::R3], [Fc::D1, Fc::L4, Fc::F3], [Fc::D3, Fc::B4, Fc::L3],
     ];
@@ -319,7 +319,7 @@
     /// Is also used to represent the 18 cube moves.
     #[derive(Eq,PartialEq,Debug,Clone)]
     struct CubieCube {
-        cp: [Co;8], // corner permutation
+        cp: [Corner;8], // corner permutation
         co: [i32;8], // corner orientation
     }
 
@@ -356,7 +356,7 @@
 
         /// Multiplies this cubie cube with another cubie cube b. Does not change b.
         fn multiply(&self, b: &Self) -> Self {
-            let mut c_perm = [Co::URF; 8];
+            let mut c_perm = [Corner::URF; 8];
             let mut c_ori = [0; 8];
             let mut ori: i32 = 0;
             for c in 0..8 {
@@ -398,8 +398,8 @@
 
         /// Stores the inverse of this cubie cube in d.
         fn inv_cubie_cube(&self, d: &mut Self) {
-            for cref in Co::iter() {
-                let c: Co = *cref;
+            for c in Corner::iter() {
+                let c = *c;
                 d.cp[self.cp[c as usize] as usize] = c;
             }
             for c in 0..8 {
@@ -439,7 +439,7 @@
                 twistparity += self.co[i];
                 twist /= 3;
             }
-            self.co[Co::DLF as usize] = (3 - twistparity % 3) % 3;
+            self.co[Corner::DLF as usize] = (3 - twistparity % 3) % 3;
             // XXX need mathematical mod?
         }
 
@@ -447,8 +447,8 @@
         fn get_cornperm(&self) -> u32{
             let mut perm = self.cp;  // duplicate cp
             let mut b = 0;
-            for jref in Co::iter().rev() {
-                let j = *jref;
+            for j in Corner::iter().rev() {
+                let j = *j;
                 let mut k = 0;
                 while perm[j as usize] != j {
                     rotate_left(&mut perm[0..(j as usize + 1)]);
@@ -462,10 +462,10 @@
 
         fn set_corners(&mut self, mut idx: u32) {
             assert!(idx < 5040);
-            for j in Co::iter() {
+            for j in Corner::iter() {
                 self.cp[*j as usize] = *j;
             }
-            for j in Co::iter() {
+            for j in Corner::iter() {
                 let j = *j as u32;
                 let mut k = idx % (j+ 1);
                 idx /= j + 1;
