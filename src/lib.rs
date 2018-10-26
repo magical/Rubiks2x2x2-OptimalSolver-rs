@@ -2,8 +2,6 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-    use std::io;
-    use std::io::Write;
     use std::sync::{Once, ONCE_INIT};
     use std::slice::Iter;
 
@@ -602,12 +600,7 @@
         let mut a = CubieCube::new();
         // TODO: cache as file
         // Move table for the corners. corner < 40320
-        let mut stdout = io::stdout();
         for i in 0..N_CORNERS {
-            if (i+1)%200 == 0 {
-                print!(".");
-                let _ = stdout.flush();
-            }
             a.set_corners(i);
             for j in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
                 let j = *j;
@@ -619,7 +612,6 @@
                 a = a.multiply(basicMoveCube[j as usize]);
             }
         }
-        println!("");
     }
 
     //
@@ -648,7 +640,6 @@
 
         let mut done = 1;
         let mut depth = 0;
-        let mut stdout = io::stdout();
         while done != N_CORNERS * N_TWIST {
             for corners in 0..N_CORNERS {
                 for twist in 0..N_TWIST {
@@ -660,10 +651,6 @@
                             if corner_depth[idx1] == -1 { // entry not yet filled
                                 corner_depth[idx1] = depth+1;
                                 done += 1;
-                                if done % 50000 == 0 {
-                                    print!(".");
-                                    let _ = stdout.flush();
-                                }
                             }
                         }
                     }
@@ -671,7 +658,6 @@
             }
             depth += 1
         }
-        println!("");
     }
 
     //
