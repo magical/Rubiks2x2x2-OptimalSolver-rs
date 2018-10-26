@@ -556,8 +556,8 @@
 
     /// Group performs operations in the Rubiks cube group.
     struct Group {
-        corntwist_move: [u32; n_corntwist],
-        cornperm_move: [u32; n_cornperm],
+        corntwist_move: [u16; n_corntwist],
+        cornperm_move: [u16; n_cornperm],
     }
 
     const n_corntwist: usize = (N_TWIST * N_MOVE) as usize;
@@ -580,23 +580,24 @@
         return unsafe{ &GROUP };
     }
 
-    fn init_corntwist(corntwist_move: &mut [u32; n_corntwist]) {
+    fn init_corntwist(corntwist_move: &mut [u16; n_corntwist]) {
         println!("creating move_corntwist table");
         let mut a = CubieCube::new();
         for i in 0..N_TWIST {
             a.set_cornertwist(i);
-            for jref in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
-                let j = *jref;
+            for j in [Color::U, Color::R, Color::F].iter() { // three faces U, R, F
+                let j = *j;
                 for k in 0..3 { // three moves for each face, for example U, U2, U3 = U'
                     a = a.multiply(basicMoveCube[j as usize]);
-                    corntwist_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_corntwist();
+                    let idx = (N_MOVE*(i as u32) + 3*(j as u32) + k) as usize;
+                    corntwist_move[idx] = a.get_corntwist() as u16;
                 }
                 a = a.multiply(basicMoveCube[j as usize]); // 4. move restores face
             }
         }
     }
 
-    fn init_cornperm(cornperm_move: &mut [u32; (N_CORNERS*N_MOVE) as usize]) {
+    fn init_cornperm(cornperm_move: &mut [u16; (N_CORNERS*N_MOVE) as usize]) {
         println!("creating move_cornperm table");
         let mut a = CubieCube::new();
         // TODO: cache as file
@@ -612,7 +613,8 @@
                 let j = *j;
                 for k in 0..3 {
                     a = a.multiply(basicMoveCube[j as usize]);
-                    cornperm_move[(N_MOVE * i + 3 * (j as u32) + k) as usize] = a.get_cornperm();
+                    let idx = (N_MOVE*(i as u32) + 3*(j as u32) + k) as usize;
+                    cornperm_move[idx] = a.get_cornperm() as u16;
                 }
                 a = a.multiply(basicMoveCube[j as usize]);
             }
@@ -626,9 +628,9 @@
     //
 
     const n_cornerprun: usize = (N_CORNERS * N_TWIST) as usize;
-    static mut cornerprun_table: [i32; n_cornerprun] = [-1; n_cornerprun]; // XXX i8
+    static mut cornerprun_table: [i8; n_cornerprun] = [-1; n_cornerprun];
 
-    fn get_pruning_table() -> &'static [i32; n_cornerprun] {
+    fn get_pruning_table() -> &'static [i8; n_cornerprun] {
         static once: Once = ONCE_INIT;
         unsafe {
             once.call_once(|| { init_cornerprun_table(&mut cornerprun_table); });
@@ -637,7 +639,7 @@
     }
 
     /// creates/loads the corner pruning table
-    fn init_cornerprun_table(corner_depth: &mut [i32; n_cornerprun]) {
+    fn init_cornerprun_table(corner_depth: &mut [i8; n_cornerprun]) {
 
         let group = get_group();
 
@@ -652,8 +654,8 @@
                 for twist in 0..N_TWIST {
                     if corner_depth[(N_TWIST * corners + twist) as usize] == depth {
                         for m in 0..9 { // Move
-                            let corners1 = group.cornperm_move[(9*corners + m) as usize];
-                            let twist1 = group.corntwist_move[(9*twist + m) as usize];
+                            let corners1 = group.cornperm_move[(9*corners + m) as usize] as u32;
+                            let twist1 = group.corntwist_move[(9*twist + m) as usize] as u32;
                             let idx1 = (N_TWIST * corners1 + twist1) as usize;
                             if corner_depth[idx1] == -1 { // entry not yet filled
                                 corner_depth[idx1] = depth+1;
@@ -680,11 +682,11 @@
         solutions: Vec<Vec<Move>>,
         sofar: Vec<Move>,
         group: &'a Group,
-        corner_depth: &'a [i32; n_cornerprun],
+        corner_depth: &'a [i8; n_cornerprun],
     }
 
     impl<'a> Solver<'a> {
-        fn search(&mut self, cornperm: u32, corntwist: u32, togo: i32) {
+        fn search(&mut self, cornperm: u32, corntwist: u32, togo: i8) {
             if togo == 0 {
                 if self.solutions.len() == 0 || self.solutions[self.solutions.len()-1].len() == self.sofar.len() {
                     self.solutions.push(self.sofar.clone())
@@ -698,8 +700,8 @@
                         }
                     }
 
-                    let cornperm_new = self.group.cornperm_move[(9*cornperm + m as u32) as usize];
-                    let corntwist_new = self.group.corntwist_move[(9*corntwist + m as u32) as usize];
+                    let cornperm_new = self.group.cornperm_move[(9*cornperm + m as u32) as usize] as u32;
+                    let corntwist_new = self.group.corntwist_move[(9*corntwist + m as u32) as usize] as u32;
 
                     if self.corner_depth[(N_TWIST * cornperm_new + corntwist_new) as usize] >= togo {
                         continue // impossible to reach solved cube in togo - 1 moves
