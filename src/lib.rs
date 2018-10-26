@@ -124,6 +124,15 @@
             static MOVES: [Move;9] = [U1, U2, U3, R1, R2, R3, F1, F2, F3];
             return MOVES.into_iter()
         }
+
+        fn name(self) -> &'static str {
+            use Move::*;
+            return match self {
+                U1=>"U", U2=> "U2", U3=>"U'",
+                F1=>"F", F2=> "F2", F3=>"F'",
+                R1=>"R", R2=> "R2", R3=>"R'",
+            }
+        }
     }
 
     //
@@ -747,9 +756,10 @@
         for sol in solutions.iter() {
             let mut ps = String::new();
             for m in sol {
-                ps += &format!("{:?} ", m);
+                ps += m.name();
+                ps += " ";
             }
-            ps += &format!("({}f)\n", ps.len()/3);
+            ps += &format!("({}f)\n", sol.len());
             s += &ps;
         }
         return Ok(s);

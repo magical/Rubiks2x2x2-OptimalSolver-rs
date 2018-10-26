@@ -5,7 +5,6 @@ use std::env;
 fn main() {
     println!("starting");
 
-
     let args: Vec<String> = env::args().collect();
     let solution;
     if args.len() < 2 {
